@@ -1,0 +1,29 @@
+---
+# port incoming should listen on
+IncomingPort: 4000
+
+# a file is split into many chunks which are uploaded in sequence...
+UploadChunkSizeKB: 1024
+
+# how many send()s may the browser be ahead of receiving acks? If this is i,
+# sender will send message (n+i) only after ack for message (n) has been
+# received. So this should be greater or equal than 1.
+# If it is 1, the upload will certainly proceed slower than it could, because
+# each chunk is first acknowledged from the server before the next one is sent.
+UploadSendAhead: 8
+
+# how long can an upload be idle before it is automatically canceled
+UploadMaxIdleDurationS: 43200 # 12 hours
+
+# for uploads to files: where should files be stored until the web app moves /
+# deletes them?
+StorageDir: '.'
+
+# how long may the 'upload is finished' request to the app backend take before
+# the upload is assumed cancelled and the file deleted
+HandoverTimeoutS: 30
+
+# how long after Incoming!! signals a complete upload to app backend should Incoming!!
+# assume the upload cancelled and delete the file? (only if upload is configured to
+# wait for confirmation from app backend that file has been retrieved)
+HandoverConfirmTimeoutS: 600

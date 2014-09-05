@@ -1,0 +1,11 @@
+*.pyc
+*.o
+*.so
+*.a
+*~
+*.swp
+*tags
+*DS_Store
+*_pycache__
+py-env/*
+incoming
