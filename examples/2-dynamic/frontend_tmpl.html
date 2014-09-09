@@ -2,64 +2,75 @@
 <head>
 <script src="http://{{incoming_host}}:{{incoming_port}}/frontend/incoming.js"></script>
 <script type="text/javascript">
+
+window.onload = function() {
+    // make sure that the incoming lib has loaded. This might not be the case
+    // if some browser add-on has blocked it.
+    if (typeof incoming === 'undefined') {
+        var output_progress = document.getElementById("output_progress");
+        output_progress.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
+        return;
+    }
+
     // before we do any uploads, we have to tell incoming!! the host:port of the
     // incoming!! server
-    incoming.set_server_hostname("{{incoming_host}}:{{incoming_port}}")
+    incoming.set_server_hostname("{{incoming_host}}:{{incoming_port}}");
+};
 
-    function handleFileSelect(evt) {
-        var output_progress = document.getElementById("output_progress");
+function handleFileSelect(evt) {
+    var output_progress = document.getElementById("output_progress");
 
-        // callbacks for tracking upload progress and completion
-        var upload_progress = function(uploader) {
-            output_progress.innerHTML = 
-                "uploaded " + uploader.bytes_acked + " of " +
-                uploader.bytes_total + " bytes";
-        }
+    // callbacks for tracking upload progress and completion
+    var upload_progress = function(uploader) {
+        output_progress.innerHTML = 
+            "uploaded " + uploader.bytes_acked + " of " +
+            uploader.bytes_total + " bytes";
+    };
 
-        var upload_finished = function(uploader) {
-            output_progress.innerHTML = "done :)";
-        }
+    var upload_finished = function(uploader) {
+        output_progress.innerHTML = "done :)";
+    };
 
-        var upload_cancelled = function(uploader) {
-            output_progress.innerHTML = uploader.cancel_msg;
-        }
+    var upload_cancelled = function(uploader) {
+        output_progress.innerHTML = uploader.cancel_msg;
+    };
 
-        var upload_error = function(uploader) {
-            output_progress.innerHTML = "Error " + uploader.error_code + ": " +
-                uploader.error_msg;
-        }
+    var upload_error = function(uploader) {
+        output_progress.innerHTML = "Error " + uploader.error_code + ": " +
+            uploader.error_msg;
+    };
 
 
-        var f = evt.target.files[0]; // f is a File object
+    var f = evt.target.files[0]; // f is a File object
 
-        // get an upload id from "my" backend (not incoming!! directly)
-        // Note that you could implement this differently. For example, you could
-        // let your backend make an upload id before delivering this page to the
-        // browser, and then deliver the id together with the page, thus making this
-        // request unneccessary.
-        // TODO: make another, simpler but less dynamic example.
-        var uploader = null;
-        var upload_id = "";
-        var xhr = new XMLHttpRequest();
-        output_progress.innerHTML = "Get upload id"
-        xhr.open('get', "/frontend/request_upload?filename=" + f.name);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) {
-                    upload_id = xhr.responseText;
+    // get an upload id from "my" backend (not incoming!! directly)
+    // Note that you could implement this differently. For example, you could
+    // let your backend make an upload id before delivering this page to the
+    // browser, and then deliver the id together with the page, thus making this
+    // request unneccessary.
+    // TODO: make another, simpler but less dynamic example.
+    var uploader = null;
+    var upload_id = "";
+    var xhr = new XMLHttpRequest();
+    output_progress.innerHTML = "Get upload id"
+    xhr.open('get', "/frontend/request_upload?filename=" + f.name);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                upload_id = xhr.responseText;
 
-                    // when we got our id, we can start uploading!
-                    uploader = incoming.Uploader(upload_id, f,
-                            upload_progress, upload_finished,
-                            upload_cancelled, upload_error).start();
+                // when we got our id, we can start uploading!
+                uploader = incoming.Uploader(upload_id, f,
+                        upload_progress, upload_finished,
+                        upload_cancelled, upload_error).start();
 
-                } else {
-                    alert(xhr.responseText);
-                }
+            } else {
+                alert(xhr.responseText);
             }
         }
-        xhr.send(null);
-    }
+    };
+    xhr.send(null);
+}
 </script>
 </head>
 

@@ -166,7 +166,7 @@ func main() {
 	// TODO: write handler (check ServeContent or ServeFile)
 
 	// --- run server forever
-	serverHost := fmt.Sprintf("localhost:%d", appVars.config.IncomingPort)
+	serverHost := fmt.Sprintf("0.0.0.0:%d", appVars.config.IncomingPort)
 	log.Printf("Will start server on %s", serverHost)
 	log.Fatal(http.ListenAndServe(serverHost, routes))
 }

@@ -1,12 +1,15 @@
 import sys
 import os
+import socket
 import uuid
 import requests
 from bottle import get, post, request, run, template, static_file, abort
 
+_hostname = socket.gethostname()
+
 @get('/')
 def main_page() :
-    return template("frontend_tmpl.html", incoming_host="localhost",
+    return template("frontend_tmpl.html", incoming_host=_hostname,
             incoming_port=sys.argv[2])
 
 _uploads = {} # { id (str) : { "secret" : str, "filename" : str }}
@@ -18,7 +21,7 @@ def request_upload() :
 
     # get upload id from incoming!!
     req_params = { "destType" : "file",
-            "signalFinishURL" : "http://localhost:%s/backend/upload_finished" % sys.argv[1],
+            "signalFinishURL" : "http://%s:%s/backend/upload_finished" % (_hostname, sys.argv[1]),
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
             "signalFinishSecret" : secret,
             }
