@@ -2,7 +2,6 @@
 Incoming!!
 
 Roadmap:
-- js lib: callbacks settable as object fields (like in many js APIs), not in constructor.
 - implement clean up
 - implement cancel, error handling, resume
 - initialization of upload module: clean temp dir (in case of app crash and restart)

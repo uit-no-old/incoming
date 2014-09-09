@@ -47,7 +47,8 @@ _incoming_lib = function() {
         ul.state_msg = "not yet started"; // purely informal, human readable state
                                           // information
 
-        // the following callbacks should be set by the caller directly
+        // the following callbacks should be set by the caller directly. All are
+        // functions taking one parameter: the uploader object.
         ul.onprogress = null;
         ul.onfinished = null;
         ul.oncancelled = null;
