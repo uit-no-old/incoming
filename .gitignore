@@ -9,3 +9,4 @@
 *_pycache__
 py-env/*
 incoming
+examples/py-env/*

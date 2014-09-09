@@ -16,6 +16,20 @@ In order to not have to reinvent the wheel for each application that uses large 
 There is already a large file upload solution out there that UiT uses ([filesender](https://www.filesender.org/)), but it is intended to be used as a standalone application and is not easily integratable into other webapps. Instead of gutting filesender and seeing whether we can factor out the bare upload functionality and then add the bits we need (communication with the web app that uses filesender, javascript code for the web app's frontend), we decided that it is easier to just roll our own.
 
 
+Running the examples
+--------------------
+
+Several eamples in the examples/ directory are provided that demonstrate how you can use Incoming!! in your web app. To get these up and running, you need python, pip, and a few dependencies. This is how you get them installed in a virtual environment:
+
+    $ cd examples
+    examples$ mkdir py-env
+    examples$ virtualenv py-env
+    examples$ source py-env/bin/activate
+    (py-env) examples$ pip install -r pip-req.txt
+
+Now you can run the example backends in whichever shell you have sourced py-env/bin/activate in.
+
+
 Integration into your web app
 -----------------------------
 
