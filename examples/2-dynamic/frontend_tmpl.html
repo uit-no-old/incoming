@@ -60,9 +60,12 @@ function handleFileSelect(evt) {
                 upload_id = xhr.responseText;
 
                 // when we got our id, we can start uploading!
-                uploader = incoming.Uploader(upload_id, f,
-                        upload_progress, upload_finished,
-                        upload_cancelled, upload_error).start();
+                uploader = incoming.Uploader(upload_id, f);
+                uploader.onprogress = upload_progress;
+                uploader.onfinished = upload_finished;
+                uploader.oncancelled = upload_cancelled;
+                uploader.onerror = upload_error;
+                uploader.start();
 
             } else {
                 alert(xhr.responseText);

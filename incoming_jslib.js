@@ -21,8 +21,7 @@ _incoming_lib = function() {
         return JSON.stringify(msg);
     };
 
-    incoming_lib.Uploader = function Uploader(upload_id, file, cb_progress, cb_finished,
-            cb_cancelled, cb_error) {
+    incoming_lib.Uploader = function Uploader(upload_id, file) {
         var ul = {};
 
         var ws = null; // WebSocket - opened in start()
@@ -46,10 +45,16 @@ _incoming_lib = function() {
         ul.error_msg = null;
         ul.cancel_msg = null;
         ul.state_msg = "not yet started"; // purely informal, human readable state
-                                       // information
+                                          // information
+
+        // the following callbacks should be set by the caller directly
+        ul.onprogress = null;
+        ul.onfinished = null;
+        ul.oncancelled = null;
+        ul.onerror = null;
 
         // try_load_and_send_file_chunk is the function we call when we want to
-        // send chunks. It wmakes file_reader load a chunk from the file. When
+        // send chunks. It makes file_reader load a chunk from the file. When
         // that chunk is loaded, file_reader will send it over the websocket
         // and call this function again (see onloadend below). In consequence,
         // this function will be called even if we can't send anything at the
@@ -90,7 +95,7 @@ _incoming_lib = function() {
                 ul.chunks_ahead += 1;
 
                 // call progress cb
-                cb_progress(ul);
+                ul.onprogress(ul);
 
                 // try to load&send another chunk
                 try_load_and_send_file_chunk();
@@ -126,14 +131,14 @@ _incoming_lib = function() {
                 }
 
                 // call progress cb
-                cb_progress(ul);
+                ul.onprogress(ul);
 
             } else if (obj.hasOwnProperty("ErrorCode")) {
                 // error handling TODO probably more to do here? some sort of recovery? cancel ourselves?
                 file_reader.abort();
                 ul.error_code = obj.ErrorCode;
                 ul.error_msg = obj.Msg;
-                cb_error(ul);
+                ul.onerror(ul);
             } else {
                 alert("Bug! Didn't understand what came out of the socket");
             }
@@ -148,11 +153,11 @@ _incoming_lib = function() {
                 ul.finished = true;
                 ws.close();
                 ul.state_msg = "all done";
-                cb_finished(ul);
+                ul.onfinished(ul);
             } else if (obj.hasOwnProperty("ErrorCode")) {
                 ul.error_code = obj.ErrorCode;
                 ul.error_msg = obj.Msg;
-                cb_error(ul);
+                ul.onerror(ul);
             }
         };
 
@@ -184,7 +189,7 @@ _incoming_lib = function() {
                     if (obj.hasOwnProperty("ErrorCode")) {
                         ul.error_code = obj.ErrorCode;
                         ul.error_msg = obj.Msg;
-                        cb_error(ul);
+                        ul.onerror(ul);
                         // TODO more error handling? cancel ourselves?
                     } else if (obj.hasOwnProperty("ChunkSizeKB")) {
                         // got upload config. set us up for upload!
