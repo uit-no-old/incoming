@@ -2,7 +2,6 @@
 Incoming!!
 
 Roadmap:
-- listening IP and port should be configurable
 - file uploads go into a temporary directory that can be specified in config
 - js lib: callbacks settable as object fields (like in many js APIs), not in constructor.
 - implement clean up
@@ -166,7 +165,8 @@ func main() {
 	// TODO: write handler (check ServeContent or ServeFile)
 
 	// --- run server forever
-	serverHost := fmt.Sprintf("0.0.0.0:%d", appVars.config.IncomingPort)
+	serverHost := fmt.Sprintf("%s:%d", appVars.config.IncomingIP,
+		appVars.config.IncomingPort)
 	log.Printf("Will start server on %s", serverHost)
 	log.Fatal(http.ListenAndServe(serverHost, routes))
 }

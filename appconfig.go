@@ -11,6 +11,7 @@ import (
 // this
 type appConfigT struct {
 	// default config for uploads
+	IncomingIP              string `yaml:"IncomingIP"`
 	IncomingPort            uint   `yaml:"IncomingPort"`
 	UploadChunkSizeKB       uint   `yaml:"UploadChunkSizeKB"`
 	UploadSendAhead         uint   `yaml:"UploadSendAhead"`

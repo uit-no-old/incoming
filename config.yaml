@@ -1,4 +1,7 @@
 ---
+# IP incoming should listen on
+IncomingIP: 0.0.0.0
+
 # port incoming should listen on
 IncomingPort: 4000
 
