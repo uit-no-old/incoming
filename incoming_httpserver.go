@@ -2,7 +2,6 @@
 Incoming!!
 
 Roadmap:
-- file uploads go into a temporary directory that can be specified in config
 - js lib: callbacks settable as object fields (like in many js APIs), not in constructor.
 - implement clean up
 - implement cancel, error handling, resume
