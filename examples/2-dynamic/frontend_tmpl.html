@@ -23,8 +23,12 @@ function handleFileSelect(evt) {
     // callbacks for tracking upload progress and completion
     var upload_progress = function(uploader) {
         output_progress.innerHTML = 
-            "uploaded " + uploader.bytes_acked + " of " +
+            "sent: " + uploader.bytes_tx +
+            ", uploaded: " + uploader.bytes_acked + " of " +
             uploader.bytes_total + " bytes";
+        //if (uploader.chunks_tx_now == 16) {
+        //    uploader.cancel("yippi");
+        //}
     };
 
     var upload_finished = function(uploader) {
@@ -65,6 +69,7 @@ function handleFileSelect(evt) {
                 uploader.onfinished = upload_finished;
                 uploader.oncancelled = upload_cancelled;
                 uploader.onerror = upload_error;
+                window.onbeforeunload = function(e) { uploader.cancel("browser window unload"); };
                 uploader.start();
 
             } else {

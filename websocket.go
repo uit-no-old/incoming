@@ -59,6 +59,10 @@ type MsgError struct {
 	Msg       string
 }
 
+type MsgCancel struct {
+	Cancel string
+}
+
 type MsgAllDone struct {
 	Success bool // we need *some* field
 }
@@ -300,11 +304,26 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// did we receive an error. pause, or cancel message?
 		if recv.messageType == websocket.TextMessage {
-			// TODO we got a cancel or error or pause message. define and
-			// handle that stuff
-			log.Printf("Got a text message now from %s but I don't handle that yet",
+			// try to unmarshal a cancel message
+			msgCancel := new(MsgCancel)
+			err = json.Unmarshal(recv.data, msgCancel)
+			if err == nil {
+				log.Printf("%s cancels the upload: %s", conn.RemoteAddr().String(),
+					msgCancel.Cancel)
+				uploader.Cancel(true, msgCancel.Cancel,
+					time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+				uploader.CleanUp()
+				_ = closeWebsocketNormally(conn, "")
+				return
+			}
+
+			// try to unmarshal a pause message TODO
+
+			// try to unmarshal an error message TODO
+
+			log.Printf("Got a text message now from %s that I don't understand",
 				conn.RemoteAddr().String())
-			_ = sendJSON(MsgError{Msg: "Unhandled text message"})
+			_ = sendJSON(MsgError{Msg: "Did not understand text message"})
 			_ = closeWebsocketNormally(conn, "")
 			return
 		}

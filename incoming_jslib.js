@@ -21,6 +21,13 @@ _incoming_lib = function() {
         return JSON.stringify(msg);
     };
 
+    var msgCancel = function msgCancel(reason) {
+        var msg = {
+            Cancel: reason
+        };
+        return JSON.stringify(msg);
+    };
+
     incoming_lib.Uploader = function Uploader(upload_id, file) {
         var ul = {};
 
@@ -84,7 +91,8 @@ _incoming_lib = function() {
         // then try to load&send another chunk
         file_reader.onloadend = function onloadend(evt) {
             if (evt.target.readyState == FileReader.DONE &&
-                    evt.target.result != null) {
+                    evt.target.result != null &&
+                    ul.cancelled == false) {
                 // send chunk
                 buf = evt.target.result;
                 ws.send(buf);
@@ -225,6 +233,22 @@ _incoming_lib = function() {
             }
             return ul;
         };
+
+        ul.cancel = function cancel(reason) {
+            //console.log(reason);
+            if (!ul.cancelled) {
+                if (ws != null) {
+                    ws.send(msgCancel(reason));
+                    ws.close();
+                }
+                ul.cancelled = true;
+                ul.state_msg = "cancelled";
+                ul.cancel_msg = reason;
+                ul.oncancelled(ul)
+            }
+            return ul;
+        };
+
         return ul;
     };
 

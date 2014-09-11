@@ -121,8 +121,11 @@ func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.URL.String(), "backend/") {
 		tellWebAppBackend = false
 	}
-	go uploader.Cancel(tellWebAppBackend, "Cancelled by request",
-		time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+	go func() {
+		uploader.Cancel(tellWebAppBackend, "Cancelled by request",
+			time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+		uploader.CleanUp()
+	}()
 	fmt.Fprint(w, "ok")
 	// when uploader is done cancelling, it will send "upload finished" to web
 	// app backend if necessary, so we are done here
