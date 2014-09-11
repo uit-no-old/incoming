@@ -35,13 +35,19 @@ type UploadToLocalFile struct {
 	chHandoverWait         chan error
 	chHandoverDone         chan struct{}
 
-	creationTime   time.Time
-	lastActionTime time.Time
+	creationTime    time.Time
+	lastActionTime  time.Time
+	idleTimeout     time.Duration
+	canResetTimeout bool
+	chResetTimeout  chan time.Duration
+	// channel is closed when timeout has been triggered, i.e. nothing should
+	// be sent over chResetTimeout any more
+	chHandleTimeoutClosed chan struct{}
 }
 
 func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	signalFinishURL *url.URL, removeFileWhenFinished bool,
-	signalFinishSecret string) Uploader {
+	signalFinishSecret string, idleTimeout time.Duration) Uploader {
 
 	u := new(UploadToLocalFile)
 	u.lock = new(sync.RWMutex)
@@ -56,7 +62,13 @@ func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	u.chHandoverDone = make(chan struct{})
 
 	u.creationTime = time.Now()
-	u.lastActionTime = time.Now()
+	u.lastActionTime = u.creationTime
+	u.idleTimeout = idleTimeout
+	u.canResetTimeout = true
+	u.chResetTimeout = make(chan time.Duration)
+	u.chHandleTimeoutClosed = make(chan struct{})
+	go u.goHandleTimeout()
+
 	u.id = pool.Put(u)
 
 	return u
@@ -88,6 +100,70 @@ func (u *UploadToLocalFile) GetIdleDuration() time.Duration {
 	return time.Since(u.lastActionTime)
 }
 
+func (u *UploadToLocalFile) ResetTimeout(d time.Duration) Uploader {
+	u.lock.Lock()
+
+	// make sure that we are in a state where doing this makes any sense
+	u.lock_state.Lock()
+	if u.state >= StateCancelled {
+		u.lock_state.Unlock()
+		u.lock.Unlock()
+		return u
+	}
+	u.lock_state.Unlock()
+
+	u.resetTimeout(d)
+	u.lock.Unlock()
+	return u
+}
+
+// resetTimeout resets the timeout to the given duration and updates
+// lastActionTime. u.lock must be held!
+func (u *UploadToLocalFile) resetTimeout(d time.Duration) {
+	if u.canResetTimeout {
+		select {
+		case u.chResetTimeout <- d:
+		case <-u.chHandleTimeoutClosed:
+		}
+		u.idleTimeout = d
+		u.lastActionTime = time.Now()
+	}
+}
+
+// goHandleTimeout is a goroutine that waits for the timeout to happen, and
+// cancels the upload when the timeout happens.  The goroutine starts with
+// u.idleTimeout as timeout.  goHandleTimeout waits for timeout or a call to
+// resetTimeut, whichever happens first. A new timeout duration of 0 disables
+// the timeout.
+// The goroutine terminates when u.chHandleTimeout is closed. CleanUp will do
+// that.
+func (u *UploadToLocalFile) goHandleTimeout() {
+	timer := time.NewTimer(u.idleTimeout)
+
+	for {
+		select {
+		case d := <-u.chResetTimeout:
+			// stop or reset ("prime") timer
+			if d == 0 {
+				timer.Stop()
+			} else {
+				timer.Reset(d)
+			}
+		case <-timer.C:
+			// cancel and clean up upload.
+			u.lock.Lock()
+			u.canResetTimeout = false
+			u.lock.Unlock()
+			log.Printf("upload %s timed out", u.GetId())
+			u.Cancel(true, "upload timed out", 5*time.Second)
+			u.CleanUp()
+		case <-u.chHandleTimeoutClosed:
+			// uploader is done and cleaned up
+			return
+		}
+	}
+}
+
 func (u *UploadToLocalFile) GetId() string {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
@@ -114,7 +190,7 @@ func (u *UploadToLocalFile) SetFileSize(size int64) error {
 	}
 
 	u.fileSize = size
-	u.lastActionTime = time.Now()
+	u.resetTimeout(u.idleTimeout)
 	return nil
 }
 
@@ -125,7 +201,7 @@ func (u *UploadToLocalFile) BindToSocketHandler() error {
 		return errors.New("Bound to some socket handler already!")
 	}
 	u.boundToSocketHandler = true
-	u.lastActionTime = time.Now()
+	u.resetTimeout(u.idleTimeout)
 	return nil
 }
 
@@ -136,13 +212,14 @@ func (u *UploadToLocalFile) UnbindFromSocketHandler() error {
 		return errors.New("not bound to any socket handler")
 	}
 	u.boundToSocketHandler = false
-	u.lastActionTime = time.Now()
+	u.resetTimeout(u.idleTimeout)
 	return nil
 }
 
 func (u *UploadToLocalFile) ConsumeFileChunk(chunk []byte) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
+	defer u.resetTimeout(u.idleTimeout)
 
 	// quite a bit of "state business" follows.
 	u.lock_state.Lock()
@@ -158,6 +235,8 @@ func (u *UploadToLocalFile) ConsumeFileChunk(chunk []byte) error {
 		}
 		u.fd = fd
 	}
+
+	// TODO: if we are resuming an upload, open the file we already have
 
 	// make sure we are in a legal state to proceed (i.e., not in any of the "we're
 	// done uploading" states)
@@ -200,7 +279,6 @@ func (u *UploadToLocalFile) ConsumeFileChunk(chunk []byte) error {
 		u.path = newName
 	}
 
-	u.lastActionTime = time.Now()
 	return nil
 }
 
@@ -221,7 +299,8 @@ func (u *UploadToLocalFile) Pause() (err error) {
 	}
 
 	// TODO implement. what is there to implement?
-	u.lastActionTime = time.Now()
+	// close the file (and make sure it's opened on resume)
+	u.resetTimeout(u.idleTimeout)
 	return nil
 }
 
@@ -256,11 +335,11 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		v.Set("cancelled", "no")
 		v.Set("cancelReason", "")
 		u.lock.Lock()
-		u.lastActionTime = time.Now()
+		u.resetTimeout(u.idleTimeout)
 		u.lock.Unlock()
 		resp, err := htclient.PostForm(u.signalFinishURL.String(), v) // this takes time
 		u.lock.Lock()
-		u.lastActionTime = time.Now()
+		u.resetTimeout(u.idleTimeout)
 		u.lock.Unlock()
 
 		// set error if http went through but we got a bad http status back
@@ -317,7 +396,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 			select {
 			case <-u.chHandoverDone:
 				u.lock.Lock()
-				u.lastActionTime = time.Now()
+				u.resetTimeout(u.idleTimeout)
 				u.lock.Unlock()
 			case <-time.After(respTimeout):
 				err = errors.New("Timed out waiting for app backend to retrieve the file")
@@ -344,10 +423,15 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 	return
 }
 
+// called by web app backend to signal that it is done retrieving
+// the uploaded file.
 func (u *UploadToLocalFile) HandoverDone() error {
+	u.lock_state.Lock()
 	if u.state != StateHandingOver {
+		u.lock_state.Unlock()
 		return errors.New("uploader is not in 'handing over' state")
 	}
+	u.lock_state.Unlock()
 
 	select {
 	case u.chHandoverDone <- struct{}{}:
@@ -384,8 +468,12 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 		u.fd.Close()
 		u.fd = nil
 	}
+	// delete file if we already have one
+	if u.path != "" {
+		os.Remove(u.path)
+	}
 
-	u.lastActionTime = time.Now()
+	u.resetTimeout(u.idleTimeout)
 
 	// tell app backend that we have cancelled if we have to. We don't need to
 	// hold the lock for this.
@@ -419,19 +507,47 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	}
 
 	u.lock.Lock()
-	u.lastActionTime = time.Now()
+	u.resetTimeout(u.idleTimeout)
 	u.lock.Unlock()
 	return err
 }
 
-func (u *UploadToLocalFile) CleanUp() error {
-	// TODO implement
+func (u *UploadToLocalFile) CleanUp() (err error) {
+	u.lock.Lock()
+	defer u.lock.Unlock()
 
-	// set state to 'cleaned up'
+	// make sure that we are in a valid state (cancelled or finished)
+	u.lock_state.Lock()
+	if u.state <= StateHandingOver {
+		u.lock_state.Unlock()
+		err = fmt.Errorf("It's too early to call CleanUp")
+		return
+	}
+	if u.state == StateCleanedUp {
+		u.lock_state.Unlock()
+		return
+	}
+	u.lock_state.Unlock()
 
 	// delete file if we have to
+	if u.removeFileWhenFinished && u.state != StateCancelled {
+		err = os.Remove(u.path)
+		if err != nil {
+			log.Printf("could not remove %s during cleanup", u.path)
+		}
+	}
 
 	// remove ourselves from uploader pool
+	u.pool.Remove(u.id)
 
-	return nil
+	// set state to 'cleaned up'
+	u.lock_state.Lock()
+	u.state = StateCleanedUp
+	u.lock_state.Unlock()
+
+	// make sure the timeout handling goroutine terminates, and that calls to
+	// ResetTimeout return
+	close(u.chHandleTimeoutClosed)
+
+	return
 }

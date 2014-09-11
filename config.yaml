@@ -15,7 +15,8 @@ UploadChunkSizeKB: 1024
 # each chunk is first acknowledged from the server before the next one is sent.
 UploadSendAhead: 8
 
-# how long can an upload be idle before it is automatically canceled
+# how long can an upload be idle before it is automatically cancelled.
+# This must be longer than either HandoverTimeoutS and HandoverConfirmTimeoutS.
 UploadMaxIdleDurationS: 43200 # 12 hours
 
 # for uploads to files: where should files be stored until the web app moves /
@@ -23,10 +24,12 @@ UploadMaxIdleDurationS: 43200 # 12 hours
 StorageDir: './temp_uploads'
 
 # how long may the 'upload is finished' request to the app backend take before
-# the upload is assumed cancelled and the file deleted
+# the upload is assumed cancelled and the file deleted.
+# This must be shorter than UploadMaxIdleDurationS.
 HandoverTimeoutS: 30
 
 # how long after Incoming!! signals a complete upload to app backend should Incoming!!
 # assume the upload cancelled and delete the file? (only if upload is configured to
 # wait for confirmation from app backend that file has been retrieved)
+# This must be shorter than UploadMaxIdleDurationS.
 HandoverConfirmTimeoutS: 600

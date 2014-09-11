@@ -9,10 +9,14 @@ import (
 
 type UploaderPool interface {
 	Get(string) (Uploader, bool)
+
 	Put(Uploader) string
+
+	// Remove removes an uploader, identified by its id, from the pool. No
+	// problem if the given id does not exist
 	Remove(string)
+
 	Size() int
-	// TODO a func for cancelling timed out uploads
 }
 
 type LockedUploaderPool struct {
@@ -52,6 +56,7 @@ func (p *LockedUploaderPool) Remove(id string) {
 	p.lock.Unlock()
 
 	p.uidPool.Remove(id)
+	log.Printf("removed uploader %s from pool. Pool size: %d", id, p.Size())
 	return
 }
 

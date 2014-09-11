@@ -87,4 +87,10 @@ type Uploader interface {
 	// facilitate housekeeping
 	GetCreationTime() time.Time
 	GetIdleDuration() time.Duration
+
+	// ResetTimeout sets or resets the timeout. This happens automatically in
+	// several functions, so you need to call this one only if you want to
+	// explicitly set or reset the timeout without doing anything else. A
+	// duration of 0 disables the timeout.
+	ResetTimeout(time.Duration) Uploader
 }

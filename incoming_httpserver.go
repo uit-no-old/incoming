@@ -86,7 +86,8 @@ func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 	storageDirAbsolute, _ := filepath.Abs(appVars.config.StorageDir)
 	uploader := upload.NewUploadToLocalFile(appVars.uploaders,
 		storageDirAbsolute, signalFinishURL,
-		removeFileWhenFinished, signalFinishSecret)
+		removeFileWhenFinished, signalFinishSecret,
+		time.Duration(appVars.config.UploadMaxIdleDurationS)*time.Second)
 
 	// answer request with id of new uploader
 	fmt.Fprint(w, uploader.GetId())
