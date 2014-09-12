@@ -7,8 +7,8 @@ window.onload = function() {
     // make sure that the incoming lib has loaded. This might not be the case
     // if some browser add-on has blocked it.
     if (typeof incoming === 'undefined') {
-        var output_progress = document.getElementById("output_progress");
-        output_progress.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
+        var output_state_msg = document.getElementById("stats_state_msg");
+        output_state_msg.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
         return;
     }
 
@@ -18,32 +18,28 @@ window.onload = function() {
 };
 
 function handleFileSelect(evt) {
-    var output_progress = document.getElementById("output_progress");
+    var output_state_msg = document.getElementById("stats_state_msg");
+    var output_error_msg = document.getElementById("stats_error_msg");
+    var output_cancel_msg = document.getElementById("stats_cancel_msg");
+    var output_chunks_tx = document.getElementById("stats_chunks_tx");
+    var output_chunks_acked = document.getElementById("stats_chunks_acked");
+    var output_chunks_ahead = document.getElementById("stats_chunks_ahead");
+    var output_kb_tx = document.getElementById("stats_kb_tx");
+    var output_kb_acked = document.getElementById("stats_kb_acked");
+    var output_kb_ahead = document.getElementById("stats_kb_ahead");
 
     // callbacks for tracking upload progress and completion
-    var upload_progress = function(uploader) {
-        output_progress.innerHTML = 
-            "sent: " + uploader.bytes_tx +
-            ", uploaded: " + uploader.bytes_acked + " of " +
-            uploader.bytes_total + " bytes";
-        //if (uploader.chunks_tx_now == 16) {
-        //    uploader.cancel("yippi");
-        //}
-    };
-
-    var upload_finished = function(uploader) {
-        output_progress.innerHTML = "done :)";
-    };
-
-    var upload_cancelled = function(uploader) {
-        output_progress.innerHTML = uploader.cancel_msg;
-    };
-
-    var upload_error = function(uploader) {
-        output_progress.innerHTML = "Error " + uploader.error_code + ": " +
-            uploader.error_msg;
-    };
-
+    var update_stats_output = function(uploader) {
+        output_state_msg.innerHTML = uploader.state_msg;
+        output_error_msg.innerHTML = uploader.error_msg;
+        output_cancel_msg.innerHTML = uploader.cancel_msg;
+        output_chunks_tx.innerHTML = uploader.chunks_tx_now.toString();
+        output_chunks_acked.innerHTML = uploader.chunks_acked_now.toString();
+        output_chunks_ahead.innerHTML = uploader.chunks_ahead.toString();
+        output_kb_tx.innerHTML = Math.round(uploader.bytes_tx / 1024);
+        output_kb_acked.innerHTML = Math.round(uploader.bytes_acked / 1024);
+        output_kb_ahead.innerHTML = Math.round((uploader.bytes_tx - uploader.bytes_acked) / 1024);
+    }
 
     var f = evt.target.files[0]; // f is a File object
 
@@ -56,7 +52,6 @@ function handleFileSelect(evt) {
     var uploader = null;
     var upload_id = "";
     var xhr = new XMLHttpRequest();
-    output_progress.innerHTML = "Get upload id"
     xhr.open('get', "/frontend/request_upload?filename=" + f.name);
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4) {
@@ -65,10 +60,10 @@ function handleFileSelect(evt) {
 
                 // when we got our id, we can start uploading!
                 uploader = incoming.Uploader(upload_id, f);
-                uploader.onprogress = upload_progress;
-                uploader.onfinished = upload_finished;
-                uploader.oncancelled = upload_cancelled;
-                uploader.onerror = upload_error;
+                uploader.onprogress = update_stats_output;
+                uploader.onfinished = update_stats_output;
+                uploader.oncancelled = update_stats_output;
+                uploader.onerror = update_stats_output;
                 window.onbeforeunload = function(e) { uploader.cancel("browser window unload"); };
                 uploader.start();
 
@@ -83,8 +78,18 @@ function handleFileSelect(evt) {
 </head>
 
 <body>
-    <input type="file" id="input_file" name="files[]"/>
-    <output id="output_progress"></output>
+<p><input type="file" id="input_file" name="files[]"/></p>
+<p><table>
+    <tr><td>State message:</td><td><output id="stats_state_msg"></output></td></tr>
+    <tr><td>Error message:</td><td><output id="stats_error_msg"></output></td></tr>
+    <tr><td>Cancel message:</td><td><output id="stats_cancel_msg"></output></td></tr>
+    <tr><td>Chunks tx:</td><td><output id="stats_chunks_tx"></output></td></tr>
+    <tr><td>Chunks acked:</td><td><output id="stats_chunks_acked"></output></td></tr>
+    <tr><td>Chunks ahead:</td><td><output id="stats_chunks_ahead"></output></td></tr>
+    <tr><td>KB tx:</td><td><output id="stats_kb_tx"></output></td></tr>
+    <tr><td>KB acked:</td><td><output id="stats_kb_acked"></output></td></tr>
+    <tr><td>KB ahead:</td><td><output id="stats_kb_ahead"></output></td></tr>
+</table></p>
 </body>
 
 <script type="text/javascript">
