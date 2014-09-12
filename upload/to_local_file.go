@@ -494,16 +494,16 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	if err != nil {
 		err = fmt.Errorf("http request to app backend at %s failed",
 			u.signalFinishURL.String())
-	}
+	} else {
+		// set error if http went through but we got a bad http status back
+		if resp.StatusCode != 200 {
+			err = fmt.Errorf("Got bad http status on handover: %s", resp.Status)
+		}
 
-	// we don't care what's in the body of the response
-	if resp.Body != nil {
-		resp.Body.Close()
-	}
-
-	// set error if http went through but we got a bad http status back
-	if err == nil && resp.StatusCode != 200 {
-		err = fmt.Errorf("Got bad http status on handover: %s", resp.Status)
+		// we don't care what's in the body of the response
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
 	}
 
 	u.lock.Lock()
