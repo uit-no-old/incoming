@@ -477,23 +477,26 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 
 	// tell app backend that we have cancelled if we have to. We don't need to
 	// hold the lock for this.
+	signalFinishSecret := u.signalFinishSecret
+	signalFinishURL := u.signalFinishURL
+	id := u.id
 	u.lock.Unlock()
 
 	htclient := new(http.Client)
 	htclient.Timeout = reqTimeout
 
 	v := url.Values{}
-	v.Set("id", u.id)
+	v.Set("id", id)
 	v.Set("filename", "")
-	v.Set("secret", u.signalFinishSecret)
+	v.Set("secret", signalFinishSecret)
 	v.Set("cancelled", "yes")
 	v.Set("cancelReason", reason)
-	resp, err := htclient.PostForm(u.signalFinishURL.String(), v) // this takes time
+	resp, err := htclient.PostForm(signalFinishURL.String(), v) // this takes time
 
 	// set error if http request didn't work
 	if err != nil {
 		err = fmt.Errorf("http request to app backend at %s failed",
-			u.signalFinishURL.String())
+			signalFinishURL.String())
 	} else {
 		// set error if http went through but we got a bad http status back
 		if resp.StatusCode != 200 {
