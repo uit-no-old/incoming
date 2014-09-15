@@ -333,6 +333,9 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 	u.lock_state.Unlock()
 
 	if !run {
+		// if the function was called while the goroutine below is running, all
+		// is fine because ch_ret will be closed when handover is done or
+		// has failed
 		return
 	}
 
@@ -389,20 +392,6 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 			}
 		}
 
-		// bail on error
-		if err != nil {
-			// set state to cancelled, propagate error if anybody listens, return
-			u.lock_state.Lock()
-			u.state = StateCancelled
-			u.lock_state.Unlock()
-			select {
-			case ch_ret <- err:
-			case <-time.After(1 * time.Second):
-			}
-			close(ch_ret)
-			return
-		}
-
 		// wait if we have to
 		if wait {
 			log.Printf("wait for app backend")
@@ -421,15 +410,20 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		u.lock_state.Lock()
 		if err == nil {
 			u.state = StateFinished
+			u.lock_state.Unlock()
 		} else {
 			u.state = StateCancelled
+			u.lock_state.Unlock()
+			u.lock.RLock()
+			log.Printf("upload %s handover failed", u.id)
+			u.lock.RUnlock()
+			u.Cancel(false, "handover failed", 0)
 		}
-		u.lock_state.Unlock()
 
-		// try to send error (likely nil) over return channel, then close it
+		// try to send error over return channel, then close it
 		select {
 		case ch_ret <- err:
-		case <-time.After(1 * time.Second):
+		case <-time.After(u.idleTimeout):
 		}
 		close(ch_ret)
 	}()
@@ -467,11 +461,8 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	}
 	u.lock_state.Unlock()
 
-	// return nil if we are already cancelled, an error if we can't cancel
-	if alreadyCancelled {
-		u.lock.Unlock()
-		return nil
-	} else if !canCancel {
+	// return error if we can't cancel
+	if !canCancel {
 		u.lock.Unlock()
 		return errors.New("too late to cancel")
 	}
@@ -488,8 +479,14 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 
 	u.resetTimeout(u.idleTimeout)
 
-	// tell app backend that we have cancelled if we have to. We don't need to
-	// hold the lock for this.
+	// return nil if we don't have to tell web app backend
+	if alreadyCancelled || !tellAppBackend {
+		u.lock.Unlock()
+		return nil
+	}
+
+	// tell app backend that we have cancelled. We don't need to hold the lock
+	// for this.
 	signalFinishSecret := u.signalFinishSecret
 	signalFinishURL := u.signalFinishURL
 	id := u.id
