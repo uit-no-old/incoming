@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
 	"source.uit.no/lars.tiede/incoming/upload"
@@ -21,6 +22,11 @@ var conn_upgrader = websocket.Upgrader{
 	//ReadBufferSize:  32768,
 	//WriteBufferSize: 32768,
 	CheckOrigin: acceptAllOrigins,
+}
+
+type Msg struct {
+	MsgType string
+	MsgData *json.RawMessage
 }
 
 /* upload request from the browser. This is the first message that the browser
@@ -61,6 +67,10 @@ type MsgError struct {
 
 type MsgCancel struct {
 	Cancel string
+}
+
+type MsgPause struct {
+	Pause bool
 }
 
 type MsgAllDone struct {
@@ -172,29 +182,63 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	defer close(wsW)
 
 	// make a write op return channel and define nifty shorthands for sending
-	// and receiving JSON encoded objects (they work like the ones in the
-	// websocket package)
+	// and receiving JSON encoded objects
 	chWriteRet := make(chan error)
-	sendJSON := func(v interface{}) error {
-		msg, err := json.Marshal(v)
+
+	// sendJSON encodes a given message v into a JSON string and sends it over
+	// the websocket.
+	sendJSON := func(v interface{}) (err error) {
+		// marshal message
+		msgData, err := json.Marshal(v)
 		if err != nil {
-			return err
+			return
 		}
+		// wrap that stuff in a Msg object and marshal that into msg
+		rawMsg := json.RawMessage(msgData)
+		msgObj := Msg{MsgType: reflect.TypeOf(v).Name(), MsgData: &rawMsg}
+		msg, err := json.Marshal(msgObj)
+		if err != nil {
+			return
+		}
+		// now send msg over websocket
 		//log.Printf("send: %+v", string(msg))
 		cmd := wsWriteCmd{websocket.TextMessage, msg, chWriteRet}
 		wsW <- &cmd
 		err = <-chWriteRet
-		return err
+		return
 	}
-	recvJSON := func(v interface{}) error {
+
+	// recvJSON receives a message from the websocket and unmarshals it into an
+	// object v. v can be of any message type, including Msg.
+	recvJSON := func(v interface{}) (err error) {
+		// recv message from websocket
 		recv, ok := <-wsR
 		if !ok {
 			return errors.New("recvJSON: socket read channel was closed")
 		}
-		err := json.Unmarshal(recv.data, v)
+		// If v's type is Msg, marshal directly into that and return. Otherwise,
+		// unmarshal into a Msg object, assert that MsgType and v.(type) are the same,
+		// unmarshal MsgData into v, and return.
+		switch v.(type) {
+		case *Msg:
+			err = json.Unmarshal(recv.data, v)
+			return
+		case *MsgUploadReq, *MsgAck, *MsgError, *MsgCancel:
+			var msg Msg
+			err = json.Unmarshal(recv.data, &msg)
+			if err != nil {
+				return
+			}
+			err = json.Unmarshal(*msg.MsgData, v)
+			return
+		default:
+			log.Printf("wanted to unmarshal unsupported message type %T", v)
+			err = fmt.Errorf("wanted to unmarshal unsupported message type %T", v)
+			return
+		}
 		//log.Printf("recv str: %s", string(recv.data))
 		//log.Printf("recv: %+v", v)
-		return err
+		return
 	}
 
 	// receive upload request from sender
@@ -218,8 +262,6 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO make sure here that uploader is in a legal state
-
 	// make sure we're the only websocket handler to use that upload
 	err = uploader.BindToSocketHandler()
 	if err != nil {
@@ -234,7 +276,8 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	// if upload is new (not resumed), set fie size. Otherwise, make sure
 	// filesize from the request is the same as in uploader (the file on the
 	// client side might have changed...)
-	if uploader.GetState() == upload.StateInit {
+	state := uploader.GetState()
+	if state == upload.StateInit {
 		err = uploader.SetFileSize(req.LengthBytes)
 		if err != nil {
 			log.Printf("File size from %s is problematic: %s",
@@ -253,8 +296,15 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// make sure that uploader is in a state for continuing
+	if state >= upload.StateCancelled {
+		_ = sendJSON(MsgError{Msg: "upload already finished or cancelled"})
+		_ = closeWebsocketNormally(conn, "")
+		return
+	}
+
 	// prepare upload config message
-	uploadConf := new(MsgUploadConf)
+	var uploadConf MsgUploadConf
 	uploadConf.ChunkSizeKB = appVars.config.UploadChunkSizeKB
 	uploadConf.FilePos = uploader.GetFilePos()
 	uploadConf.SendAhead = appVars.config.UploadSendAhead
@@ -270,7 +320,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// receive ack from sender - from then, all that comes from sender is
-	// binary file chunks
+	// binary file chunks or pause/cancel/error messages
 	ack := new(MsgAck)
 	err = recvJSON(ack)
 	if err != nil {
@@ -294,6 +344,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	// uploader until whole file is here
 	for uploader.GetFilePos() != uploader.GetFileSize() {
 		recv := <-wsR
+
 		// did the read from the socket go well?
 		if recv.err != nil {
 			log.Printf("Receive of file chunk or cancel or error or pause from %s failed",
@@ -302,32 +353,66 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 			_ = closeWebsocketNormally(conn, "")
 			return
 		}
+
 		// did we receive an error. pause, or cancel message?
 		if recv.messageType == websocket.TextMessage {
-			// try to unmarshal a cancel message
-			msgCancel := new(MsgCancel)
-			err = json.Unmarshal(recv.data, msgCancel)
-			if err == nil {
-				log.Printf("%s cancels the upload: %s", conn.RemoteAddr().String(),
-					msgCancel.Cancel)
-				uploader.Cancel(true, msgCancel.Cancel,
-					time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
-				uploader.CleanUp()
+			// unmarshal a Msg
+			msg := new(Msg)
+			err = json.Unmarshal(recv.data, msg)
+			if err != nil {
+				log.Printf("Got a text message now from %s that I don't understand",
+					conn.RemoteAddr().String())
+				_ = sendJSON(MsgError{Msg: "Did not understand text message"})
 				_ = closeWebsocketNormally(conn, "")
 				return
 			}
 
-			// try to unmarshal a pause message TODO
-
-			// try to unmarshal an error message TODO
-
-			log.Printf("Got a text message now from %s that I don't understand",
-				conn.RemoteAddr().String())
-			_ = sendJSON(MsgError{Msg: "Did not understand text message"})
-			_ = closeWebsocketNormally(conn, "")
-			return
+			// unmarshal payload and deal with message (if we understand it)
+			switch msg.MsgType {
+			case "MsgPause":
+				msgPause := new(MsgPause)
+				err = json.Unmarshal(*msg.MsgData, msgPause)
+				if err == nil {
+					log.Printf("%s pauses upload", conn.RemoteAddr().String())
+					uploader.Pause()
+					continue
+				}
+			case "MsgCancel":
+				msgCancel := new(MsgCancel)
+				err = json.Unmarshal(*msg.MsgData, msgCancel)
+				if err == nil {
+					log.Printf("%s cancels the upload: %s", conn.RemoteAddr().String(),
+						msgCancel.Cancel)
+					uploader.Cancel(true, msgCancel.Cancel,
+						time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+					uploader.CleanUp()
+					_ = closeWebsocketNormally(conn, "")
+					return
+				}
+			case "MsgError":
+				msgError := new(MsgError)
+				err = json.Unmarshal(*msg.MsgData, msgError)
+				if err == nil {
+					log.Printf("error from %s, cancelling upload: %s", conn.RemoteAddr().String(),
+						msgError.Msg)
+					uploader.Cancel(true,
+						fmt.Sprintf("error from frontend: %s", msgError.Msg),
+						time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+					uploader.CleanUp()
+					_ = closeWebsocketNormally(conn, "")
+					return
+				}
+			}
+			if err != nil {
+				log.Printf("Got a text message now from %s that I don't understand",
+					conn.RemoteAddr().String())
+				_ = sendJSON(MsgError{Msg: "Did not understand text message"})
+				_ = closeWebsocketNormally(conn, "")
+				return
+			}
 		}
-		// did we receive something we don't understand?
+
+		// did we receive something we don't understand (neither text nor binary)?
 		if recv.messageType != websocket.BinaryMessage {
 			log.Printf("Expected file chunk or text but got sth else from %s",
 				conn.RemoteAddr().String())
@@ -335,6 +420,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 			_ = closeWebsocketNormally(conn, "")
 			return
 		}
+
 		// still here? fine. consume the file chunk, and when that went well, ack
 		err = uploader.ConsumeFileChunk(recv.data)
 		if err != nil {
@@ -344,8 +430,9 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 			_ = sendJSON(MsgError{Msg: errMsg})
 			_ = closeWebsocketNormally(conn, "")
 			if uploader.GetState() != upload.StateCancelled {
-				go uploader.Cancel(true, errMsg,
+				uploader.Cancel(true, errMsg,
 					time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
+				uploader.CleanUp()
 			}
 			return
 		}
@@ -368,7 +455,6 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 					uploader.GetSignalFinishURL().String())
 				return
 			}
-			// TODO handle cancel or error message
 		case err = <-ch_wait:
 			//log.Printf("read wait channel: %+v", err)
 			cont = false

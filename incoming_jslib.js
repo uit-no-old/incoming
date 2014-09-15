@@ -8,22 +8,52 @@ _incoming_lib = function() {
 
     var msgUploadReq = function msgUploadReq(upload_id, length_bytes) {
         var msg = {
-            Id: upload_id,
-            LengthBytes: length_bytes
+            MsgType: "MsgUploadReq",
+            MsgData : {
+                Id: upload_id,
+                LengthBytes: length_bytes
+            }
         };
         return JSON.stringify(msg);
     };
 
     var msgAck = function msgAck(ack) {
         var msg = {
-            Ack: ack
+            MsgType: "MsgAck",
+            MsgData: {
+                Ack: ack
+            }
+        };
+        return JSON.stringify(msg);
+    };
+
+    var msgPause = function msgPause() {
+        var msg = {
+            MsgType: "MsgPause",
+            MsgData: {
+                Pause: true
+            }
         };
         return JSON.stringify(msg);
     };
 
     var msgCancel = function msgCancel(reason) {
         var msg = {
-            Cancel: reason
+            MsgType: "MsgCancel",
+            MsgData: {
+                Cancel: reason
+            }
+        };
+        return JSON.stringify(msg);
+    };
+
+    var msgError = function msgError(reason) {
+        var msg = {
+            MsgType: "MsgError",
+            MsgData: {
+                ErrorCode: 0,
+                Msg: reason
+            }
         };
         return JSON.stringify(msg);
     };
@@ -122,10 +152,10 @@ _incoming_lib = function() {
         var receive_chunk_acks = function receive_chunk_acks(msg) {
             // after handshake is done in start(), this is ws.onmessage.
             var obj = JSON.parse(msg.data);
-            if (obj.hasOwnProperty("ChunkSize")) {
+            if (obj.MsgType == "MsgChunkAck") {
                 // update state
-                ul.bytes_acked += obj.ChunkSize;
-                ul.bytes_ahead -= obj.ChunkSize;
+                ul.bytes_acked += obj.MsgData.ChunkSize;
+                ul.bytes_ahead -= obj.MsgData.ChunkSize;
                 ul.chunks_acked_now += 1;
                 ul.chunks_ahead -= 1;
 
@@ -133,6 +163,7 @@ _incoming_lib = function() {
                 // for final "upload complete" message. if not, send more
                 // chunks
                 if (ul.bytes_acked == ul.bytes_total) {
+                    // TODO this could be the case right after receiving upload config from server too, if we reconnected while waiting for the server to finish! In that case, we never receive a chunk ack
                     ul.state_msg = "processing file on server";
                     ws.onmessage = receive_final_message;
                 } else {
@@ -142,11 +173,11 @@ _incoming_lib = function() {
                 // call progress cb
                 ul.onprogress(ul);
 
-            } else if (obj.hasOwnProperty("ErrorCode")) {
+            } else if (obj.MsgType == "MsgError") {
                 // error handling TODO probably more to do here? some sort of recovery? cancel ourselves?
                 file_reader.abort();
-                ul.error_code = obj.ErrorCode;
-                ul.error_msg = obj.Msg;
+                ul.error_code = obj.MsgData.ErrorCode;
+                ul.error_msg = obj.MsgData.Msg;
                 ul.onerror(ul);
             } else {
                 alert("Bug! Didn't understand what came out of the socket");
@@ -158,14 +189,14 @@ _incoming_lib = function() {
         // fetching the file from the incoming!! backend.
         var receive_final_message = function receive_final_message(msg) {
             var obj = JSON.parse(msg.data);
-            if (obj.hasOwnProperty("Success")) {
+            if (obj.MsgType == "MsgAllDone") {
                 ul.finished = true;
                 ws.close();
                 ul.state_msg = "all done";
                 ul.onfinished(ul);
-            } else if (obj.hasOwnProperty("ErrorCode")) {
-                ul.error_code = obj.ErrorCode;
-                ul.error_msg = obj.Msg;
+            } else if (obj.MsgType == "MsgError") {
+                ul.error_code = obj.MsgData.ErrorCode;
+                ul.error_msg = obj.MsgData.Msg;
                 ul.onerror(ul);
             }
         };
@@ -195,21 +226,21 @@ _incoming_lib = function() {
                 // receive error or upload config
                 ws.onmessage = function prot01_recvConfig(msg) {
                     var obj = JSON.parse(msg.data);
-                    if (obj.hasOwnProperty("ErrorCode")) {
-                        ul.error_code = obj.ErrorCode;
-                        ul.error_msg = obj.Msg;
+                    if (obj.MsgType == "MsgError") {
+                        ul.error_code = obj.MsgData.ErrorCode;
+                        ul.error_msg = obj.MsgData.Msg;
                         ul.onerror(ul);
                         // TODO more error handling? cancel ourselves?
-                    } else if (obj.hasOwnProperty("ChunkSizeKB")) {
+                    } else if (obj.MsgType == "MsgUploadConf") {
                         // got upload config. set us up for upload!
-                        upload_conf = obj;
+                        upload_conf = obj.MsgData;
                         ul.bytes_acked = upload_conf.FilePos;
                         ul.bytes_tx = ul.bytes_acked;
-                        ws.onmessage = receive_chunk_acks;
+                        ws.onmessage = receive_chunk_acks; // TODO if all is uploaded, this must be wait for final msg
                         ws.send(msgAck(true));
                         ul.state_msg = "transfer file chunks to upload server"
                         // start uploading chunks
-                        try_load_and_send_file_chunk();
+                        try_load_and_send_file_chunk(); // TODO only if there is more to upload
                     } else {
                         alert("Bug! Didn't understand what came out of the socket");
                     }
