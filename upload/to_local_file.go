@@ -236,7 +236,16 @@ func (u *UploadToLocalFile) ConsumeFileChunk(chunk []byte) error {
 		u.fd = fd
 	}
 
-	// TODO: if we are resuming an upload, open the file we already have
+	// if we are resuming an upload, open the file we already have
+	if u.state == StatePaused {
+		fd, err := os.OpenFile(u.path, os.O_RDWR, 0666)
+		if err != nil {
+			u.lock_state.Unlock()
+			return errors.New("Could not re-open file! Is it gone?")
+		}
+		u.fd = fd
+		_, _ = u.fd.Seek(0, os.SEEK_END)
+	}
 
 	// make sure we are in a legal state to proceed (i.e., not in any of the "we're
 	// done uploading" states)
@@ -262,7 +271,7 @@ func (u *UploadToLocalFile) ConsumeFileChunk(chunk []byte) error {
 	bytesWritten, err := u.fd.Write(chunk)
 	if err != nil {
 		u.fd.Truncate(u.filePos)
-		_, _ = u.fd.Seek(0, 2)
+		_, _ = u.fd.Seek(0, os.SEEK_END)
 		return err
 	}
 	u.filePos += int64(bytesWritten)
@@ -288,7 +297,7 @@ func (u *UploadToLocalFile) Pause() (err error) {
 
 	// assert that we are in a legal state, set state to paused
 	u.lock_state.Lock()
-	if u.state != StateUploading {
+	if u.state != StateUploading && u.state != StatePaused {
 		err = errors.New("can't pause now")
 	} else {
 		u.state = StatePaused
@@ -298,8 +307,12 @@ func (u *UploadToLocalFile) Pause() (err error) {
 		return
 	}
 
-	// TODO implement. what is there to implement?
-	// close the file (and make sure it's opened on resume)
+	// close the file
+	if u.fd != nil {
+		u.fd.Close()
+		u.fd = nil
+	}
+
 	u.resetTimeout(u.idleTimeout)
 	return nil
 }

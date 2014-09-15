@@ -81,7 +81,16 @@ type Uploader interface {
 	// no-op.
 	Cancel(bool, string, time.Duration) error
 
+	// Pause can be called to pause an upload while the upload is in progress.
+	// Pause will make an Uploader close the file or whatever else it writes
+	// to, and open it again when ConsumeFileChunk is called again (which
+	// "unpauses" the upload). The idle timeout is not affected by Pause, so in
+	// practice it makes (for now at least) little difference whether you call
+	// Pause, or whether you not call Pause and just let some time pass before
+	// calling ConsumeFileChunk again. This behavior is likely to change in the
+	// future.
 	Pause() error
+
 	CleanUp() error
 
 	// facilitate housekeeping
