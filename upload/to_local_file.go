@@ -368,16 +368,12 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		respBody := []byte(nil)
 		if err == nil {
 			if resp.ContentLength > -1 {
-				readLimit := resp.ContentLength
-				if readLimit > 4 {
-					readLimit = 4
-				}
-				respBody = make([]byte, readLimit)
+				respBody = make([]byte, resp.ContentLength)
 				resp.Body.Read(respBody)
 				resp.Body.Close()
 			}
 		}
-		respStr := string(respBody)
+		respStr := string(respBody[0:4])
 		//log.Printf("Got response from app backend: %s", respStr)
 
 		// response is "done"? yay, we'll be done. response is "wait"? we'll wait...
@@ -513,8 +509,11 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 			err = fmt.Errorf("Got bad http status on handover: %s", resp.Status)
 		}
 
-		// we don't care what's in the body of the response
+		// we don't care what's in the body of the response, but we read it
+		// anyway so that the remote site won't suffer a broken pipe
 		if resp.Body != nil {
+			respBody := make([]byte, resp.ContentLength)
+			resp.Body.Read(respBody)
 			resp.Body.Close()
 		}
 	}
