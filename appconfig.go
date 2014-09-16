@@ -11,14 +11,15 @@ import (
 // this
 type appConfigT struct {
 	// default config for uploads
-	IncomingIP              string `yaml:"IncomingIP"`
-	IncomingPort            uint   `yaml:"IncomingPort"`
-	UploadChunkSizeKB       uint   `yaml:"UploadChunkSizeKB"`
-	UploadSendAhead         uint   `yaml:"UploadSendAhead"`
-	UploadMaxIdleDurationS  uint   `yaml:"UploadMaxIdleDurationS"`
-	StorageDir              string `yaml:"StorageDir"`
-	HandoverTimeoutS        uint   `yaml:"HandoverTimeoutS"`
-	HandoverConfirmTimeoutS uint   `yaml:"HandoverConfirmTimeoutS"`
+	IncomingIP                  string `yaml:"IncomingIP"`
+	IncomingPort                uint   `yaml:"IncomingPort"`
+	UploadChunkSizeKB           uint   `yaml:"UploadChunkSizeKB"`
+	UploadSendAhead             uint   `yaml:"UploadSendAhead"`
+	UploadMaxIdleDurationS      uint   `yaml:"UploadMaxIdleDurationS"`
+	WebsocketConnectionTimeoutS uint   `yaml:"WebsocketConnectionTimeoutS"`
+	StorageDir                  string `yaml:"StorageDir"`
+	HandoverTimeoutS            uint   `yaml:"HandoverTimeoutS"`
+	HandoverConfirmTimeoutS     uint   `yaml:"HandoverConfirmTimeoutS"`
 }
 
 func LoadConfig(path string) (c *appConfigT, e error) {

@@ -18,9 +18,15 @@ window.onload = function() {
 };
 
 function handleFileSelect(evt) {
+    var uploader = null;
+
+    var input_file_select = document.getElementById("input_file");
+    var input_pause = document.getElementById("input_pause");
+    var input_btn_cancel = document.getElementById("input_btn_cancel");
     var output_state_msg = document.getElementById("stats_state_msg");
     var output_error_msg = document.getElementById("stats_error_msg");
     var output_cancel_msg = document.getElementById("stats_cancel_msg");
+    var output_connected = document.getElementById("stats_connected");
     var output_chunks_tx = document.getElementById("stats_chunks_tx");
     var output_chunks_acked = document.getElementById("stats_chunks_acked");
     var output_chunks_ahead = document.getElementById("stats_chunks_ahead");
@@ -28,17 +34,41 @@ function handleFileSelect(evt) {
     var output_kb_acked = document.getElementById("stats_kb_acked");
     var output_kb_ahead = document.getElementById("stats_kb_ahead");
 
-    // callbacks for tracking upload progress and completion
-    var update_stats_output = function(uploader) {
+    input_file_select.disabled = true;
+
+    // click handler for cancel button
+    var cancel_clicked = function() {
+        uploader.cancel("user cancelled manually");
+    };
+    input_btn_cancel.onclick = cancel_clicked;
+
+    // click handler for pause checkbox
+    var pause_clicked = function() {
+        if (input_pause.checked) {
+            uploader.pause("pause");
+        } else {
+            uploader.pause("unpause");
+        }
+    };
+    input_pause.onclick = pause_clicked;
+
+    // uploader callback for updating all the HTML things
+    var update = function(uploader) {
         output_state_msg.innerHTML = uploader.state_msg;
         output_error_msg.innerHTML = uploader.error_msg;
         output_cancel_msg.innerHTML = uploader.cancel_msg;
+        output_connected.innerHTML = uploader.connected.toString();
         output_chunks_tx.innerHTML = uploader.chunks_tx_now.toString();
         output_chunks_acked.innerHTML = uploader.chunks_acked_now.toString();
         output_chunks_ahead.innerHTML = uploader.chunks_ahead.toString();
         output_kb_tx.innerHTML = Math.round(uploader.bytes_tx / 1024);
         output_kb_acked.innerHTML = Math.round(uploader.bytes_acked / 1024);
         output_kb_ahead.innerHTML = Math.round((uploader.bytes_tx - uploader.bytes_acked) / 1024);
+
+        input_file_select.disabled = !(uploader.cancelled || uploader.finished);
+        input_pause.disabled = !uploader.can_pause;
+        input_pause.checked = uploader.paused;
+        input_btn_cancel.disabled = !uploader.can_cancel;
     }
 
     var f = evt.target.files[0]; // f is a File object
@@ -50,7 +80,6 @@ function handleFileSelect(evt) {
     // browser, and then deliver the id together with the page, thus making this
     // request unneccessary.
     // TODO: make another, simpler but less dynamic example.
-    var uploader = null;
     var upload_id = "";
     var xhr = new XMLHttpRequest();
     xhr.open('get', "/frontend/request_upload?filename=" + f.name);
@@ -61,10 +90,10 @@ function handleFileSelect(evt) {
 
                 // when we got our id, we can start uploading!
                 uploader = incoming.Uploader(upload_id, f);
-                uploader.onprogress = update_stats_output;
-                uploader.onfinished = update_stats_output;
-                uploader.oncancelled = update_stats_output;
-                uploader.onerror = update_stats_output;
+                uploader.onprogress = update;
+                uploader.onfinished = update;
+                uploader.oncancelled = update;
+                uploader.onerror = update;
                 window.onbeforeunload = function(e) { uploader.cancel("browser window unload"); };
                 uploader.start();
 
@@ -79,11 +108,16 @@ function handleFileSelect(evt) {
 </head>
 
 <body>
-<p><input type="file" id="input_file" name="files[]"/></p>
+<p>
+<input type="file" id="input_file" name="files[]"/><br/>
+<input type="checkbox" id="input_pause" disabled/>pause<br/>
+<button id="input_btn_cancel" disabled/>cancel</button><br/>
+</p>
 <p><table>
     <tr><td>State message:</td><td><output id="stats_state_msg"></output></td></tr>
     <tr><td>Error message:</td><td><output id="stats_error_msg"></output></td></tr>
     <tr><td>Cancel message:</td><td><output id="stats_cancel_msg"></output></td></tr>
+    <tr><td>Connected:</td><td><output id="stats_connected"></output></td></tr>
     <tr><td>Chunks tx:</td><td><output id="stats_chunks_tx"></output></td></tr>
     <tr><td>Chunks acked:</td><td><output id="stats_chunks_acked"></output></td></tr>
     <tr><td>Chunks ahead:</td><td><output id="stats_chunks_ahead"></output></td></tr>

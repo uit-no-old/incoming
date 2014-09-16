@@ -41,7 +41,7 @@ _incoming_lib = function() {
         var msg = {
             MsgType: "MsgCancel",
             MsgData: {
-                Cancel: reason
+                Reason: reason
             }
         };
         return JSON.stringify(msg);
@@ -66,6 +66,7 @@ _incoming_lib = function() {
         var upload_conf = null; // from incoming - has ChunkSizeKB,
                                 // FilePos (for resume), SendAhead.
                                 // Set in start()
+        var conn_retry = null;
         ul.chunks_tx_now = 0; // "now" because upload could have been resumed
         ul.chunks_acked_now = 0; // "now" because upload could have been resumed
         ul.bytes_tx = 0; // bytes sent over websocket
@@ -73,6 +74,10 @@ _incoming_lib = function() {
         ul.bytes_total = file.size;
         ul.finished = false;
         ul.cancelled = false;
+        ul.can_cancel = true;
+        ul.can_pause = false;
+        ul.connected = false;
+        ul.paused = false;
         ul.chunks_ahead = 0; // how many chunks have been sent without
                              // having gotten acknowledgement from incoming
                              // (upload_conf.SendAhead is upper limit for this)
@@ -86,10 +91,10 @@ _incoming_lib = function() {
 
         // the following callbacks should be set by the caller directly. All are
         // functions taking one parameter: the uploader object.
-        ul.onprogress = null;
-        ul.onfinished = null;
-        ul.oncancelled = null;
-        ul.onerror = null;
+        ul.onprogress = function(o){};
+        ul.onfinished = function(o){};
+        ul.oncancelled = function(o){};
+        ul.onerror = function(o){};
 
         // try_load_and_send_file_chunk is the function we call when we want to
         // send chunks. It makes file_reader load a chunk from the file. When
@@ -119,29 +124,36 @@ _incoming_lib = function() {
 
         // set up file_reader - when a chunk is loaded, send it over the websocket,
         // then try to load&send another chunk
-        file_reader.onloadend = function onloadend(evt) {
+        file_reader.onload = function onload(evt) {
             if (evt.target.readyState == FileReader.DONE &&
                     evt.target.result != null &&
-                    ul.cancelled == false) {
-                // send chunk
-                buf = evt.target.result;
-                ws.send(buf);
+                    !ul.cancelled && !ul.paused) {
+                // send chunk if websocket is open
+                if (ws.readyState == WebSocket.OPEN) {
+                    buf = evt.target.result;
+                    ws.send(buf);
 
-                // update state
-                ul.bytes_tx += buf.byteLength;
-                ul.bytes_ahead += buf.byteLength;
-                ul.chunks_tx_now += 1;
-                ul.chunks_ahead += 1;
+                    // update state
+                    ul.bytes_tx += buf.byteLength;
+                    ul.bytes_ahead += buf.byteLength;
+                    ul.chunks_tx_now += 1;
+                    ul.chunks_ahead += 1;
 
-                // call progress cb
-                ul.onprogress(ul);
+                    // call progress cb
+                    ul.onprogress(ul);
 
-                // try to load&send another chunk
-                try_load_and_send_file_chunk();
+                    // try to load&send another chunk
+                    try_load_and_send_file_chunk();
+                }
             } else {
-                // TODO: error handling. file could be gone or something
-                // onloadend is also called after abort()?
-                alert("file_reader.onloadend error")
+                if (!ul.cancelled && !ul.paused) {
+                    ul.cancel("unexpected file_reader.onloadend error");
+                }
+            }
+        };
+        file_reader.onerror = function onerror(evt) {
+            if (!ul.cancelled) {
+                ul.cancel("error on file load: " + evt.name + " " + evt.message);
             }
         };
 
@@ -163,7 +175,8 @@ _incoming_lib = function() {
                 // for final "upload complete" message. if not, send more
                 // chunks
                 if (ul.bytes_acked == ul.bytes_total) {
-                    // TODO this could be the case right after receiving upload config from server too, if we reconnected while waiting for the server to finish! In that case, we never receive a chunk ack
+                    ul.can_cancel = false;
+                    ul.can_pause = false;
                     ul.state_msg = "processing file on server";
                     ws.onmessage = receive_final_message;
                 } else {
@@ -174,11 +187,12 @@ _incoming_lib = function() {
                 ul.onprogress(ul);
 
             } else if (obj.MsgType == "MsgError") {
-                // error handling TODO probably more to do here? some sort of recovery? cancel ourselves?
-                file_reader.abort();
                 ul.error_code = obj.MsgData.ErrorCode;
                 ul.error_msg = obj.MsgData.Msg;
                 ul.onerror(ul);
+                ul.cancel("Error from server: " + ul.error_msg);
+            } else if (obj.MsgType == "MsgCancel") {
+                ul.cancel(obj.MsgData.Reason);
             } else {
                 alert("Bug! Didn't understand what came out of the socket");
             }
@@ -197,6 +211,8 @@ _incoming_lib = function() {
             } else if (obj.MsgType == "MsgError") {
                 ul.error_code = obj.MsgData.ErrorCode;
                 ul.error_msg = obj.MsgData.Msg;
+                ws.close();
+                ul.state_msg = "Upload failed on server side: " + ul.error_msg;
                 ul.onerror(ul);
             }
         };
@@ -209,6 +225,10 @@ _incoming_lib = function() {
             ul.bytes_tx = ul.bytes_acked;
             ul.chunks_ahead = 0;
             ul.bytes_ahead = 0;
+            ul.connected = false;
+            ul.paused = false;
+            ul.can_cancel = true;
+            ul.can_pause = false;
             ul.state_msg = "connecting to upload server";
 
             // open websocket TODO make sure it's the same security as the whole page (encrypted or non-encrypted)
@@ -218,6 +238,7 @@ _incoming_lib = function() {
             ws.onopen = function onopen() {
                 // we handle the handshake here, up until we start
                 // sending file chunks.
+                ul.connected = true;
                 ul.state_msg = "upload protocol handshake"
 
                 // send upload request
@@ -230,17 +251,27 @@ _incoming_lib = function() {
                         ul.error_code = obj.MsgData.ErrorCode;
                         ul.error_msg = obj.MsgData.Msg;
                         ul.onerror(ul);
-                        // TODO more error handling? cancel ourselves?
+                        ul.cancel("can't handle '" + ul.error_msg + "'");
                     } else if (obj.MsgType == "MsgUploadConf") {
                         // got upload config. set us up for upload!
                         upload_conf = obj.MsgData;
                         ul.bytes_acked = upload_conf.FilePos;
                         ul.bytes_tx = ul.bytes_acked;
-                        ws.onmessage = receive_chunk_acks; // TODO if all is uploaded, this must be wait for final msg
                         ws.send(msgAck(true));
-                        ul.state_msg = "transfer file chunks to upload server"
-                        // start uploading chunks
-                        try_load_and_send_file_chunk(); // TODO only if there is more to upload
+                        // we might already be finished uploading data...
+                        if (ul.bytes_acked == ul.bytes_total) {
+                            ul.can_cancel = false;
+                            ul.can_pause = false;
+                            ul.state_msg = "processing file on server";
+                            ws.onmessage = receive_final_message;
+                        } else {
+                            ul.state_msg = "transfer file chunks to upload server"
+                            ul.can_pause = true;
+                            ws.onmessage = receive_chunk_acks;
+                            // start uploading chunks
+                            try_load_and_send_file_chunk();
+                        }
+                        ul.onprogress(ul);
                     } else {
                         alert("Bug! Didn't understand what came out of the socket");
                     }
@@ -248,36 +279,111 @@ _incoming_lib = function() {
             };
 
             ws.onclose = function onclose(msg) {
-                // TODO implement! here or outside of start() (then just set here)
-                // if not cancelled or error, try start() a few times until we give up
-                // and error. Need to reset some internal state first?
-                file_reader.abort();
-                ul.state_msg = "connection to upload server closed"
-                // The event object passed to "onclose" has three fields named "code", "reason", and "wasClean".  The "code" is a numeric status provided by the server, and can hold the same values as the "code" argument of close().  The "reason" field is a string describing the circumstances of the "close" event.
+                ul.connected = false;
+                if (ul.paused || ul.finished || ul.cancelled || ul.error_code != null) {
+                    ul.onprogress(ul);
+                    ws = null;
+                    return;
+                }
+
+                // try to start again every 20 seconds
+                ul.state_msg = "lost connection, trying to start again every 20 seconds";
+                ul.connected = false;
+                conn_retry = setTimeout(ul.start, 20000);
+                ws = null;
+                ul.can_pause = true;
+                ul.onprogress(ul);
+                // The event object passed to "onclose" has three fields named
+                // "code", "reason", and "wasClean".  The "code" is a numeric
+                // status provided by the server, and can hold the same values
+                // as the "code" argument of close().  The "reason" field is a
+                // string describing the circumstances of the "close" event.
             }
 
             ws.onerror = function onerror(evt_error) {
-                // TODO more error handling? try again or something?
-                file_reader.abort();
                 ws.close();
-                alert(evt_error.message);
+                //ul.error_code = 0;
+                //ul.error_msg = "websocket error: " + evt_error.message;
+                //ul.onerror(ul);
+                //ul.cancel("websocket error: " + evt_error.message);
             }
             return ul;
         };
 
         ul.cancel = function cancel(reason) {
-            //console.log(reason);
-            if (!ul.cancelled) {
+            if (!ul.cancelled && ul.can_cancel) {
+                file_reader.abort()
                 if (ws != null) {
-                    ws.send(msgCancel(reason));
-                    ws.close();
+                    if (ws.readyState == WebSocket.OPEN) {
+                        ws.send(msgCancel(reason));
+                        // TODO we need the backend to ack this, otherwise we don't
+                        // know whether this came through or not
+                        ws.close();
+                    } else {
+                        ws = null;
+                        ul.error_code = 0;
+                        ul.error_msg = "upload is cancelled, but the backend doesn't know it yet";
+                        ul.onerror(ul);
+                    }
+                } else {
+                    ul.error_code = 0;
+                    ul.error_msg = "upload is cancelled, but the backend doesn't know it yet";
+                    ul.onerror(ul);
                 }
                 ul.cancelled = true;
-                ul.state_msg = "cancelled";
+                ul.can_cancel = false;
+                ul.can_pause = false;
+                ul.state_msg = "cancelled: " + reason;
                 ul.cancel_msg = reason;
+                if (conn_retry != null) {
+                    clearTimeout(conn_retry);
+                    conn_retry = null;
+                }
                 ul.oncancelled(ul)
             }
             return ul;
+        };
+
+        // pause pauses, unpauses, or toggles pause, depending on the
+        // parameter. "pause" pauses, "unpause" unpauses, "toggle" toggles.
+        ul.pause = function pause(what) {
+            if (ul.finished || ul.cancelled) {
+                return;
+            }
+
+            var new_state = false;
+            if (what == "pause") {new_state = true;}
+            else if (what == "unpause") {new_state = false;}
+            else if (what == "toggle") {new_state = !ul.paused;}
+            else {alert("Bug! Uploader.pause() called with unknown parameter!");}
+
+            if (new_state == ul.paused) {
+                return;
+            }
+
+            if (conn_retry != null) {
+                clearTimeout(conn_retry);
+                conn_retry = null;
+            }
+
+            if (new_state) {
+                // pause upload
+                file_reader.abort();
+                if (ws != null && ws.readyState == WebSocket.OPEN) {
+                    ws.send(msgPause());
+                    ws.close();
+                }
+                ul.paused = true;
+                ul.can_cancel = false;
+                ul.state_msg = "paused";
+                ul.onprogress(ul);
+            } else {
+                // unpause upload: call ul.start(), which should connect and resume.
+                ul.paused = false;
+                ul.state_msg = "unpaused";
+                ul.onprogress(ul);
+                ul.start();
+            }
         };
 
         return ul;

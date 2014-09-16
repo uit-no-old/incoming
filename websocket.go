@@ -66,7 +66,7 @@ type MsgError struct {
 }
 
 type MsgCancel struct {
-	Cancel string
+	Reason string
 }
 
 type MsgPause struct {
@@ -128,6 +128,8 @@ func wsConnHandler(c *websocket.Conn) (<-chan *wsReadResult,
 		for cont := true; cont; {
 			// read from websocket forever
 			res := new(wsReadResult)
+			c.SetReadDeadline(time.Now().Add(
+				time.Duration(appVars.config.WebsocketConnectionTimeoutS) * time.Second))
 			res.messageType, res.data, res.err = c.ReadMessage() // err on socket close
 
 			if res.err == nil {
@@ -155,6 +157,8 @@ func wsConnHandler(c *websocket.Conn) (<-chan *wsReadResult,
 		// recv from ch_w and send what is received over WriteMessage until channel
 		// is closed
 		for cmd := range ch_w {
+			c.SetWriteDeadline(time.Now().Add(
+				time.Duration(appVars.config.WebsocketConnectionTimeoutS) * time.Second))
 			err := c.WriteMessage(cmd.messageType, cmd.data)
 			cmd.ch_ret <- err
 		}
@@ -257,7 +261,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		log.Printf("Received upload req from %s for non-existing upload %s",
 			conn.RemoteAddr().String(), req.Id)
-		_ = sendJSON(MsgError{Msg: "Unknown upload id"})
+		_ = sendJSON(MsgError{Msg: "Unknown upload id - maybe upload timed out?"})
 		_ = closeWebsocketNormally(conn, "")
 		return
 	}
@@ -382,8 +386,8 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 				err = json.Unmarshal(*msg.MsgData, msgCancel)
 				if err == nil {
 					log.Printf("%s cancels the upload: %s", conn.RemoteAddr().String(),
-						msgCancel.Cancel)
-					uploader.Cancel(true, msgCancel.Cancel,
+						msgCancel.Reason)
+					uploader.Cancel(true, msgCancel.Reason,
 						time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
 					uploader.CleanUp()
 					_ = closeWebsocketNormally(conn, "")
@@ -426,6 +430,8 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("uploader couldn't consume file chunk: %s",
 				err.Error())
+			// TODO check if uploader is in cancelled state. If yes, send
+			// cancel message, not error message
 			errMsg := fmt.Sprintf("Error while consuming file chunk: %s", err.Error())
 			_ = sendJSON(MsgError{Msg: errMsg})
 			_ = closeWebsocketNormally(conn, "")

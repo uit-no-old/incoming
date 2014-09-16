@@ -2,8 +2,8 @@
 Incoming!!
 
 Roadmap:
-- implement clean up
-- implement cancel, error handling, resume
+- TODO cancel from frontend should be acked, otherwise frontend won't know if cancel
+  message came through
 - initialization of upload module: clean temp dir (in case of app crash and restart)
 - make code agnostic to which CWD it is called from
 - document. make sure to mention that adblock (at least on chrome) causes high

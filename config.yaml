@@ -6,7 +6,7 @@ IncomingIP: 0.0.0.0
 IncomingPort: 4000
 
 # a file is split into many chunks which are uploaded in sequence...
-UploadChunkSizeKB: 1024
+UploadChunkSizeKB: 512
 
 # how many send()s may the browser be ahead of receiving acks? If this is i,
 # sender will send message (n+i) only after ack for message (n) has been
@@ -18,6 +18,11 @@ UploadSendAhead: 8
 # how long can an upload be idle before it is automatically cancelled.
 # This must be longer than either HandoverTimeoutS and HandoverConfirmTimeoutS.
 UploadMaxIdleDurationS: 43200 # 12 hours
+
+# how long may reads and writes to the websocket take before they are timed out?
+# this must be smaller than the reconnect attempt interval in the javascript
+# library in ws.onclose (which is as of now set to 20 seconds)
+WebsocketConnectionTimeoutS: 10
 
 # for uploads to files: where should files be stored until the web app moves /
 # deletes them?
