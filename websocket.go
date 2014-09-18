@@ -56,6 +56,10 @@ type MsgAck struct {
 	Ack bool
 }
 
+type MsgCancelAck struct {
+	Ack bool
+}
+
 type MsgChunkAck struct {
 	ChunkSize int64
 }
@@ -390,6 +394,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 					uploader.Cancel(true, msgCancel.Reason,
 						time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
 					uploader.CleanUp()
+					_ = sendJSON(MsgCancelAck{Ack: true})
 					_ = closeWebsocketNormally(conn, "")
 					return
 				}

@@ -13,7 +13,7 @@ UploadChunkSizeKB: 512
 # received. So this should be greater or equal than 1.
 # If it is 1, the upload will certainly proceed slower than it could, because
 # each chunk is first acknowledged from the server before the next one is sent.
-UploadSendAhead: 8
+UploadSendAhead: 4
 
 # how long can an upload be idle before it is automatically cancelled.
 # This must be longer than either HandoverTimeoutS and HandoverConfirmTimeoutS.

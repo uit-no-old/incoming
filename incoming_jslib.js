@@ -27,6 +27,16 @@ _incoming_lib = function() {
         return JSON.stringify(msg);
     };
 
+    var msgCancelAck = function msgCancelAck(ack) {
+        var msg = {
+            MsgType: "MsgCancelAck",
+            MsgData: {
+                Ack: ack
+            }
+        };
+        return JSON.stringify(msg);
+    };
+
     var msgPause = function msgPause() {
         var msg = {
             MsgType: "MsgPause",
@@ -74,6 +84,7 @@ _incoming_lib = function() {
         ul.bytes_total = file.size;
         ul.finished = false;
         ul.cancelled = false;
+        ul.cancelling = false;
         ul.can_cancel = true;
         ul.can_pause = false;
         ul.connected = false;
@@ -112,7 +123,8 @@ _incoming_lib = function() {
             // file_reader load (and in onloadend send) the next chunk
             if (ul.chunks_ahead < upload_conf.SendAhead && 
                     file_reader.readyState != FileReader.LOADING &&
-                    ul.bytes_tx < ul.bytes_total) {
+                    ul.bytes_tx < ul.bytes_total &&
+                    !ul.cancelling) {
                 var end = ul.bytes_tx + (upload_conf.ChunkSizeKB*1024);
                 if (end > ul.bytes_total) {
                     end = ul.bytes_total;
@@ -122,12 +134,13 @@ _incoming_lib = function() {
             }
         };
 
-        // set up file_reader - when a chunk is loaded, send it over the websocket,
-        // then try to load&send another chunk
+        // file_reader - when a chunk is loaded, send it over the websocket,
+        // then try to load&send another chunk. If something went wrong
+        // during loading, cancel the upload.
         file_reader.onload = function onload(evt) {
             if (evt.target.readyState == FileReader.DONE &&
                     evt.target.result != null &&
-                    !ul.cancelled && !ul.paused) {
+                    !ul.cancelling && !ul.cancelled && !ul.paused) {
                 // send chunk if websocket is open
                 if (ws.readyState == WebSocket.OPEN) {
                     buf = evt.target.result;
@@ -139,6 +152,13 @@ _incoming_lib = function() {
                     ul.chunks_tx_now += 1;
                     ul.chunks_ahead += 1;
 
+                    // if this was the last chunk, we can no longer
+                    // cancel or pause
+                    if (ul.bytes_tx == ul.bytes_total) {
+                        ul.can_cancel = false;
+                        ul.can_pause = false;
+                    }
+
                     // call progress cb
                     ul.onprogress(ul);
 
@@ -146,7 +166,7 @@ _incoming_lib = function() {
                     try_load_and_send_file_chunk();
                 }
             } else {
-                if (!ul.cancelled && !ul.paused) {
+                if (!ul.cancelling && !ul.cancelled && !ul.paused) {
                     ul.cancel("unexpected file_reader.onloadend error");
                 }
             }
@@ -175,8 +195,6 @@ _incoming_lib = function() {
                 // for final "upload complete" message. if not, send more
                 // chunks
                 if (ul.bytes_acked == ul.bytes_total) {
-                    ul.can_cancel = false;
-                    ul.can_pause = false;
                     ul.state_msg = "processing file on server";
                     ws.onmessage = receive_final_message;
                 } else {
@@ -313,33 +331,60 @@ _incoming_lib = function() {
         ul.cancel = function cancel(reason) {
             if (!ul.cancelled && ul.can_cancel) {
                 file_reader.abort()
-                if (ws != null) {
-                    if (ws.readyState == WebSocket.OPEN) {
-                        ws.send(msgCancel(reason));
-                        // TODO we need the backend to ack this, otherwise we don't
-                        // know whether this came through or not
-                        ws.close();
-                    } else {
-                        ws = null;
-                        ul.error_code = 0;
-                        ul.error_msg = "upload is cancelled, but the backend doesn't know it yet";
-                        ul.onerror(ul);
-                    }
-                } else {
+                if (ws != null && ws.readyState == WebSocket.OPEN) {
+                    ul.cancelling = true;
+                    ws.send(msgCancel(reason));
+
+                    // we need the backend to ack this, so we set ws.onmessage to
+                    // receive a MsgCancelAck. However, there might be other
+                    // messages arriving before that (most likely chunk acks),
+                    // so we need to call whichever "usual" message handler we have
+                    // in ws.onmessage in case we don't get a MsgCancelAck.
+                    var usual_onmessage_handler = ws.onmessage;
+                    ws.onmessage = function recv_cancel_ack(msg) {
+                        var obj = JSON.parse(msg.data);
+                        if (obj.MsgType == "MsgCancelAck") {
+                            ul.cancelled = true;
+                            ul.cancelling = false;
+                            ul.can_cancel = false;
+                            ul.state_msg = "cancelled: " + reason;
+                            ul.cancel_msg = reason;
+                            ws.close();
+                            ul.oncancelled(ul);
+                        } else {
+                            // we have received a different message - most
+                            // likely chunk acks. Call message handler that we
+                            // would call normally.
+                            usual_onmessage_handler(msg);
+                            // message handler might have changed ws.onmessage
+                            if (ws.onmessage != recv_cancel_ack) {
+                                usual_onmessage_handler = ws.onmessage;
+                                ws.onmessage = recv_cancel_ack;
+                            }
+                        }
+                    };
+                } else { 
+                    // we couldn't send a cancel message to the backend
+                    ul.cancelled = true;
+                    ul.can_cancel = false;
+                    ul.state_msg = "cancelled: " + reason;
+                    ul.cancel_msg = reason;
                     ul.error_code = 0;
                     ul.error_msg = "upload is cancelled, but the backend doesn't know it yet";
                     ul.onerror(ul);
+                    ul.oncancelled(ul)
                 }
-                ul.cancelled = true;
+
+                // the following regardless of whether we could send a cancel
+                // message to the backend or not
                 ul.can_cancel = false;
                 ul.can_pause = false;
-                ul.state_msg = "cancelled: " + reason;
-                ul.cancel_msg = reason;
+                ul.state_msg = "cancelling: " + reason;
                 if (conn_retry != null) {
                     clearTimeout(conn_retry);
                     conn_retry = null;
                 }
-                ul.oncancelled(ul)
+                ul.onprogress(ul);
             }
             return ul;
         };

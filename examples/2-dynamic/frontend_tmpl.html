@@ -27,6 +27,9 @@ function handleFileSelect(evt) {
     var output_error_msg = document.getElementById("stats_error_msg");
     var output_cancel_msg = document.getElementById("stats_cancel_msg");
     var output_connected = document.getElementById("stats_connected");
+    var output_cancelling = document.getElementById("stats_cancelling");
+    var output_cancelled = document.getElementById("stats_cancelled");
+    var output_finished = document.getElementById("stats_finished");
     var output_chunks_tx = document.getElementById("stats_chunks_tx");
     var output_chunks_acked = document.getElementById("stats_chunks_acked");
     var output_chunks_ahead = document.getElementById("stats_chunks_ahead");
@@ -58,6 +61,9 @@ function handleFileSelect(evt) {
         output_error_msg.innerHTML = uploader.error_msg;
         output_cancel_msg.innerHTML = uploader.cancel_msg;
         output_connected.innerHTML = uploader.connected.toString();
+        output_cancelling.innerHTML = uploader.cancelling.toString();
+        output_cancelled.innerHTML = uploader.cancelled.toString();
+        output_finished.innerHTML = uploader.finished.toString();
         output_chunks_tx.innerHTML = uploader.chunks_tx_now.toString();
         output_chunks_acked.innerHTML = uploader.chunks_acked_now.toString();
         output_chunks_ahead.innerHTML = uploader.chunks_ahead.toString();
@@ -118,6 +124,9 @@ function handleFileSelect(evt) {
     <tr><td>Error message:</td><td><output id="stats_error_msg"></output></td></tr>
     <tr><td>Cancel message:</td><td><output id="stats_cancel_msg"></output></td></tr>
     <tr><td>Connected:</td><td><output id="stats_connected"></output></td></tr>
+    <tr><td>Cancelling:</td><td><output id="stats_cancelling"></output></td></tr>
+    <tr><td>Cancelled:</td><td><output id="stats_cancelled"></output></td></tr>
+    <tr><td>Finished:</td><td><output id="stats_finished"></output></td></tr>
     <tr><td>Chunks tx:</td><td><output id="stats_chunks_tx"></output></td></tr>
     <tr><td>Chunks acked:</td><td><output id="stats_chunks_acked"></output></td></tr>
     <tr><td>Chunks ahead:</td><td><output id="stats_chunks_ahead"></output></td></tr>
