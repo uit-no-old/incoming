@@ -26,6 +26,7 @@ WebsocketConnectionTimeoutS: 10
 
 # for uploads to files: where should files be stored until the web app moves /
 # deletes them?
+# Relative paths are evaluated relative to current working directory
 StorageDir: './temp_uploads'
 
 # how long may the 'upload is finished' request to the app backend take before
