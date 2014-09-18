@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path"
 
+	"bitbucket.org/kardianos/osext"
 	"gopkg.in/yaml.v1"
 )
 
@@ -22,12 +26,28 @@ type appConfigT struct {
 	HandoverConfirmTimeoutS     uint   `yaml:"HandoverConfirmTimeoutS"`
 }
 
-func LoadConfig(path string) (c *appConfigT, e error) {
-	// read config file
+func LoadConfig() (c *appConfigT, e error) {
+	// find out which file to load
+	fPath := ""
+	if _, e = os.Stat("incoming_cfg.yaml"); e == nil {
+		fPath = "incoming_cfg.yaml"
+	} else {
+		programDir, _ := osext.ExecutableFolder()
+		candPath := path.Join(programDir, "incoming_cfg.yaml")
+		if _, e := os.Stat(candPath); e == nil {
+			fPath = candPath
+		}
+	}
+
+	if fPath == "" {
+		e = fmt.Errorf("didn't find config file anywhere!")
+		return
+	}
+
 	var fileContent []byte
-	fileContent, e = ioutil.ReadFile(path)
+	fileContent, e = ioutil.ReadFile(fPath)
 	if e != nil {
-		log.Printf("Couldn't read config file %s: %s", path, e.Error())
+		log.Printf("Couldn't read config file %s: %s", fPath, e.Error())
 		return
 	}
 
@@ -35,7 +55,7 @@ func LoadConfig(path string) (c *appConfigT, e error) {
 	c = new(appConfigT)
 	e = yaml.Unmarshal(fileContent, c)
 	if e != nil {
-		log.Printf("Couldn't parse config file %s: %s", path, e.Error())
+		log.Printf("Couldn't parse config file %s: %s", fPath, e.Error())
 		return
 	}
 

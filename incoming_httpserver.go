@@ -137,9 +137,10 @@ func main() {
 	var err error
 
 	// load config
-	appVars.config, err = LoadConfig("./config.yaml") // TODO: LoadConfig should figure out from where to get the config file (do it like ansible does)
+	appVars.config, err = LoadConfig()
 	if err != nil {
-		log.Printf("Exit program")
+		log.Printf("Couldn't load config!")
+		log.Fatal(err)
 		return
 	}
 
