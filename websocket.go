@@ -358,6 +358,10 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Receive of file chunk or cancel or error or pause from %s failed",
 				conn.RemoteAddr().String())
 			_ = sendJSON(MsgError{Msg: "Receive of file chunk failed"})
+			// TODO this happens with Chrome if the network connection is cut and then
+			// re-established quickly. We could recover from this error if we just
+			// close and re-open the connection in the frontend. In order to do that,
+			// we need to use error codes.
 			_ = closeWebsocketNormally(conn, "")
 			return
 		}
