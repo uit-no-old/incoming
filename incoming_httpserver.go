@@ -2,7 +2,6 @@
 Incoming!!
 
 Roadmap:
-- initialization of upload module: clean temp dir (in case of app crash and restart)
 - make code agnostic to which CWD it is called from
 - document. make sure to mention that adblock (at least on chrome) causes high
   CPU usage. recommend to disable adblock for the page that uses incoming.
@@ -144,6 +143,13 @@ func main() {
 		return
 	}
 
+	// init upload module
+	err = upload.InitModule(appVars.config.StorageDir)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	// init uploader pool
 	appVars.uploaders = upload.NewLockedUploaderPool()
 
@@ -162,7 +168,6 @@ func main() {
 		Methods("GET")
 	routes.HandleFunc("/frontend/incoming.js", ServeJSFileHandler).
 		Methods("GET")
-	// TODO: write handler (check ServeContent or ServeFile)
 
 	// --- run server forever
 	serverHost := fmt.Sprintf("%s:%d", appVars.config.IncomingIP,

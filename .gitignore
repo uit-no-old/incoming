@@ -10,3 +10,4 @@
 py-env/*
 incoming
 examples/py-env/*
+temp_uploads/*

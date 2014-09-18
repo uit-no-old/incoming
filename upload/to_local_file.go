@@ -12,6 +12,22 @@ import (
 	"time"
 )
 
+func initStorageDir(storageDir string) error {
+	// empty directory by removing it (no error if it doesn't exist)
+	err := os.RemoveAll(storageDir)
+	if err != nil {
+		return err
+	}
+
+	// create directory
+	err = os.MkdirAll(storageDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type UploadToLocalFile struct {
 	lock *sync.RWMutex
 

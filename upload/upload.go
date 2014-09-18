@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+// InitModule initializes the upload module. At present, this is only clearing
+// the local file uploader's storage directory, which we have to do in case the
+// app was shut down while uploads were running.
+func InitModule(storageDir string) error {
+	return initStorageDir(storageDir)
+}
+
 const (
 	StateInit = iota
 	StateUploading
