@@ -28,6 +28,10 @@ func initStorageDir(storageDir string) error {
 	return nil
 }
 
+// UploadToLocalFile is an uploader that stores a file in a locally accessible
+// filesystem, and hands over the path to the uploaded file to the web app. In
+// order to be able to use this uploader, both Incoming!! and the web app need
+// to be able to access the same file system.
 type UploadToLocalFile struct {
 	lock *sync.RWMutex
 

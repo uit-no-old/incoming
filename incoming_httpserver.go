@@ -2,7 +2,6 @@
 Incoming!!
 
 Roadmap:
-- make code agnostic to which CWD it is called from
 - document. make sure to mention that adblock (at least on chrome) causes high
   CPU usage. recommend to disable adblock for the page that uses incoming.
 --> 0.1 finished

@@ -23,14 +23,28 @@ const (
 )
 
 type Uploader interface {
-	// only one websocket connection per uploader
+	// We allow only one active socket handler per upload. BindToSocketHandler
+	// allocates an uploader to a socket handler.
 	BindToSocketHandler() error
+
+	// UnbindFromSocketHandler 'deallocates' an uploader from a socket handler.
 	UnbindFromSocketHandler() error
 
+	// SetFileSize should be called once before any chunks are uploaded.
 	SetFileSize(int64) error
+
+	// GetFileSize returns the size of the file that is being uploaded.
 	GetFileSize() int64
+
+	// GetFilePos returns the current cursor position within the uploaded
+	// file, i.e. how many bytes have been uploaded already.
 	GetFilePos() int64
+
+	// GetSignalFinishURL returns the web app backend URL the uploader POSTs to
+	// when the upload is finished.
 	GetSignalFinishURL() *url.URL
+
+	// GetId returns the (textual) ID of the upload.
 	GetId() string
 
 	// GetState queries the upload state. It never takes long to return.
@@ -44,12 +58,11 @@ type Uploader interface {
 
 	// HandFileToApp asynchronously notifies the app backend that a file with a
 	// certain id has arrived, and that the app backend can fetch / move / copy
-	// it. It then optionally waits until the app backend is finished
-	// obtaining the file (whether this wait happens is decided by the app
-	// backend). After all of that is done, HandFileToApp sends an error object
-	// to the channel the function returns. It's fine if nobody is listening.
-	// When everything is done successfully, the state of the upload is either
-	// 'finished'.
+	// it. It then optionally waits until the app backend is finished obtaining
+	// the file (whether this wait happens is decided by the app backend).
+	// After all of that is done, HandFileToApp sends an error object to the
+	// channel the function returns. It's fine if nobody is listening.  When
+	// everything is done successfully, the state of the upload is 'finished'.
 	//
 	// If handover is not successful, the returned error object is not nil, and
 	// the upload's state is "cancelled". CleanUp() is not automatically
@@ -66,7 +79,7 @@ type Uploader interface {
 
 	// HandoverDone should be called by the app backend when it is finished
 	// obtaining the file.
-	// error is not nil if there was not HandFileToApp routine running, or
+	// error is not nil if there was no HandFileToApp routine running, or
 	// if the upload was not in the "hand over file" state.
 	HandoverDone() error
 
@@ -98,10 +111,17 @@ type Uploader interface {
 	// future.
 	Pause() error
 
+	// CleanUp cleans up after a finished or cancelled upload. It removes
+	// temporary data, and removes the uploader from the uploader pool.
 	CleanUp() error
 
-	// facilitate housekeeping
+	// GetCreationTime returns the time when the uploader was created.
 	GetCreationTime() time.Time
+
+	// GetIdleDuration returns the duration since the upload has been idle.
+	// The 'last action' timestamp is updated on most function calls, and also
+	// during a few of the asynchronous goroutines, for example when handingthe
+	// file over to the web app backend.
 	GetIdleDuration() time.Duration
 
 	// ResetTimeout sets or resets the timeout. This happens automatically in
