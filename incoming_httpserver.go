@@ -32,11 +32,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"bitbucket.org/kardianos/osext"
 	"github.com/gorilla/mux"
 
 	"source.uit.no/lars.tiede/incoming/upload"
@@ -91,8 +93,35 @@ func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeJSFileHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./incoming_jslib.js") // TODO make this robust. need dir
-	// from somewhere
+	programDir, _ := osext.ExecutableFolder()
+	filePath := path.Join(programDir, "incoming_jslib.js")
+	http.ServeFile(w, r, filePath)
+}
+
+func FinishUploadHandler(w http.ResponseWriter, r *http.Request) {
+	// fetch uploader for given id
+	id := r.FormValue("id")
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "id not given")
+		return
+	}
+	uploader, ok := appVars.uploaders.Get(id)
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "id unknown")
+		return
+	}
+
+	// tell uploader that handover is done
+	err := uploader.HandoverDone()
+
+	// return error message or "ok"
+	if err != nil {
+		fmt.Fprint(w, err.Error())
+	} else {
+		fmt.Fprint(w, "ok")
+	}
 }
 
 func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -161,9 +190,8 @@ func main() {
 		Methods("POST")
 	routes.HandleFunc("/frontend/cancel_upload", CancelUploadHandler).
 		Methods("POST")
-	//routes.HandleFunc("/backend/finish_upload", FinishUploadHandler).
-	//		Methods("POST")
-	// TODO: write handler
+	routes.HandleFunc("/backend/finish_upload", FinishUploadHandler).
+		Methods("POST")
 	routes.HandleFunc("/frontend/upload_ws", websocketHandler).
 		Methods("GET")
 	routes.HandleFunc("/frontend/incoming.js", ServeJSFileHandler).
