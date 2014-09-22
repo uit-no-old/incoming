@@ -65,6 +65,7 @@ type UploadToLocalFile struct {
 	chHandleTimeoutClosed chan struct{}
 }
 
+// NewUploadToLocalFile makes a local file uploader.
 func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	signalFinishURL *url.URL, removeFileWhenFinished bool,
 	signalFinishSecret string, idleTimeout time.Duration) Uploader {
