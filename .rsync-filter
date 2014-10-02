@@ -1,2 +1,3 @@
 dir-merge,- .gitignore
 - /.git
+- /ansible/docker_images
