@@ -8,6 +8,6 @@
 *DS_Store
 *_pycache__
 py-env/*
-incoming
+./incoming
 examples/py-env/*
 temp_uploads/*

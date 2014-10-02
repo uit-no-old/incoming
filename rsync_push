@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rsync -Favz . ${1}:~/go/src/source.uit.no/lars.tiede/incoming/
