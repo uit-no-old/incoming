@@ -1,0 +1,7 @@
+---
+- hosts: build
+  roles:
+      - { role: build_and_save_container, image_file_name: 'incoming',
+        image_name: 'lars.tiede/incoming', image_tag: 'latest'}
+  vars:
+      - image_storage_dir: docker_images

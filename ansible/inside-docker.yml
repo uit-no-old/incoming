@@ -1,0 +1,13 @@
+---
+- hosts: local
+  connection: local
+  roles:
+      - golang
+      - incoming
+      - incoming_as_runit_daemon
+  vars:
+      go_version: go1.3.1
+      go_platform_and_suffix: linux-amd64.tar.gz
+      go_archive_storage_dir: /tmp/ansible-installs
+      incoming_source_dir: "{{ lookup('env', 'GOPATH') }}/src/source.uit.no/lars.tiede/incoming"
+      incoming_executable: "{{ incoming_source_dir }}/incoming"

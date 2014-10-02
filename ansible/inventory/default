@@ -1,0 +1,9 @@
+ltita-pc            host_build_user=ansible-build
+asskicker.uit.no
+
+[build]
+ltita-pc
+
+[test]
+ltita-pc
+asskicker.uit.no

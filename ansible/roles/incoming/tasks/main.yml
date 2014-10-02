@@ -1,0 +1,38 @@
+---
+- name: have directory {{ incoming_source_dir }}
+  file: path={{ incoming_source_dir }} state=directory
+
+- name: have contents of source directory
+  copy: src=../../../../{{ item }} dest={{ incoming_source_dir }}/
+  register: source_copy
+  with_items:
+      - appconfig.go
+      - incoming_cfg.yaml
+      - incoming_httpserver.go
+      - incoming_jslib.js
+      - uidpool
+      - upload
+      - websocket.go
+# this was not a nice way of doing it, but all the nice ways available to me don't
+# work, at least at the moment:
+# - copy module on whole directory will copy everything including py-env, and will
+#   actually fail
+# - synchronize module doesn't work when connection is 'local' (as is the
+#   case when running this stuff locally in a docker container)
+# - I was too lazy to write a custom script. It wouldn't be nicer than this anyway.
+# - if we're running locally in a docker container, we could skip this step and let
+#   Dockerfile copy the directory. I think that's equally un-nice as this.
+
+- name: have git and mercurial (needed to go get dependencies)
+  apt: name={{ item }}
+  with_items:
+      - git
+      - mercurial
+
+- name: have Incoming!! executable built and installed
+  shell: '. /etc/profile; cd "{{ incoming_source_dir }}" && go get && go build'
+  when: source_copy.changed
+# Another little hack just for the docker case: sourcing /etc/profile shouldn't
+# be necessary.  It's necessary here because in the local case, /etc/profile
+# might not have been sourced between installing go and this task. In that
+# case, go's bin directory is not in the $PATH...

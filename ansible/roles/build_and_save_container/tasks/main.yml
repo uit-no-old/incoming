@@ -1,0 +1,23 @@
+---
+- name: have ~/incoming_source directory
+  remote_user: "{{ host_build_user }}"
+  file: dest="/home/{{ host_build_user }}/incoming_source" state=directory
+
+# TODO: factor out directory name as variable - this play should be able to
+# build _any_ container, not just incoming.
+
+- name: synchronize project directory
+  remote_user: "{{ host_build_user }}"
+  synchronize: src=../../../../ dest="/home/{{ host_build_user }}/incoming_source/"
+      archive=no delete=yes links=yes perms=yes recursive=yes times=yes
+  register: sync_project
+
+- name: have docker-py
+  remote_user: root
+  pip: name=docker-py
+
+- name: build docker image
+  remote_user: root
+  docker_image: name={{ image_name }} tag={{ image_tag }}
+      path="/home/{{ host_build_user }}/incoming_source" state=build
+  when: sync_project.changed

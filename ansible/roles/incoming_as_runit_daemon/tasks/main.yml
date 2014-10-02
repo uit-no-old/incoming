@@ -1,0 +1,6 @@
+---
+- name: have directory for runit daemon script
+  file: dest=/etc/service/incoming state=directory
+
+- name: have incoming runit daemon start script in place
+  template: src=incoming.sh dest=/etc/service/incoming/run mode=0744

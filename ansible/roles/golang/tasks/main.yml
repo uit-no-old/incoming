@@ -1,0 +1,29 @@
+---
+- name: have directory {{ go_archive_storage_dir }}
+  remote_user: root
+  file: path={{ go_archive_storage_dir }} state=directory
+
+- name: have go binary on target host
+  remote_user: root
+  copy: src={{ go_version }}.{{ go_platform_and_suffix }}
+      dest={{ go_archive_storage_dir }}/{{ go_version }}.{{ go_platform_and_suffix }}
+  register: go_archive        
+
+- name: if necessary, remove old go installation
+  remote_user: root
+  shell: rm -rf /usr/local/go
+  when: go_archive.changed
+
+- name: if necessary, create go directory
+  remote_user: root
+  shell: mkdir -p /usr/local/go
+  when: go_archive.changed
+
+- name: if necessary, unpack binaries
+  remote_user: root
+  unarchive: src={{ go_archive_storage_dir }}/{{ go_version }}.{{ go_platform_and_suffix }}  dest=/usr/local/ copy=no
+  when: go_archive.changed
+
+- name: go in PATH
+  remote_user: root
+  lineinfile: dest=/etc/profile line="export PATH=$PATH:/usr/local/go/bin" backup=yes
