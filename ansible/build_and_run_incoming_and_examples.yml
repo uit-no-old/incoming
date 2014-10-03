@@ -1,8 +1,12 @@
 ---
 - hosts: build
   roles:
-      - { role: build_and_save_container, dockerfile_dir: '../',
-        image_file_name: 'incoming', image_name: 'lars.tiede/incoming',
-        image_tag: 'latest'}
+      - { role: build_and_save_container,
+        dockerfile_dir: '../',
+        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-incoming",--filter="- .rsync-filter-incoming"',
+        image_file_name: 'incoming',
+        image_name: 'lars.tiede/incoming',
+        image_tag: 'latest',
+        remove_image_from_host: False }
   vars:
       - image_storage_dir: docker_images

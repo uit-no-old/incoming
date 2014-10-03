@@ -1,0 +1,3 @@
+---
+extra_rsync_opts: ""
+remove_image_from_host: True
