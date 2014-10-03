@@ -1,0 +1,8 @@
+---
+- name: have directories for runit daemon scripts
+  file: dest=/etc/service/{{ item.name }} state=directory
+  with_items: incoming_example_defs
+
+- name: have incoming runit daemon start scripts in place
+  template: src=incoming.sh dest=/etc/service/{{ item.name }}/run mode=0744
+  with_items: incoming_example_defs

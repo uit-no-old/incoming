@@ -18,9 +18,19 @@ CMD ["/sbin/my_init"]
 
 
 ## my stuff
-#
+
+# install ansible into container (we'll run a 'local playbook' instead of running
+# a playbook from another host inside a running and SSH enabled docker container)
+RUN apt-get install -y ansible aptitude python-apt python-pip
+# TODO: remove python-pip, it's only here to speed up repeated imsge builds
+# during development
+
 # copy project diretcory over (note that files in .dockerignore are omitted)
-ADD . /incoming_examples/
+ADD . /tmp/incoming_examples
+
+# run ansible playbook to install dependencies, build and install the example
+# apps
+RUN cd /tmp/incoming_examples/ansible && ansible-playbook -i localhost, install_inside_docker.yml -c local
 
 # contact points to the outside world: HTTP port
 EXPOSE 4001

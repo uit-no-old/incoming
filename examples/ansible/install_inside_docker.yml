@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  connection: local
+  roles:
+      - incoming_examples
+      - role: incoming_examples_as_runit_daemons
+        incoming_example_defs:
+            - name: incoming_example_2
+              directory: 2-dynamic
+              invocation: python backend.py 4001 4000
+  vars:
+      host_example_user: root

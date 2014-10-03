@@ -1,12 +1,19 @@
 ---
 - hosts: build
   roles:
-      - { role: build_and_save_container,
-        dockerfile_dir: '../',
-        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-incoming",--filter="- .rsync-filter-incoming"',
-        image_file_name: 'incoming',
-        image_name: 'lars.tiede/incoming',
-        image_tag: 'latest',
-        remove_image_from_host: False }
+      - role: build_and_save_container
+        dockerfile_dir: '../'
+        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-incoming",--filter="- .rsync-filter-incoming"'
+        image_file_name: 'incoming'
+        image_name: 'lars.tiede/incoming'
+        image_tag: 'latest'
+        remove_image_from_host: False
+      - role: build_and_save_container
+        dockerfile_dir: '../examples/'
+        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-examples",--filter="- .rsync-filter-examples"'
+        image_file_name: 'incoming_examples'
+        image_name: 'lars.tiede/incoming_examples'
+        image_tag: 'latest'
+        remove_image_from_host: False
   vars:
       - image_storage_dir: docker_images

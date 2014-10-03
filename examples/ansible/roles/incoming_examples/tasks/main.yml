@@ -1,0 +1,33 @@
+---
+- name: have apt dependencies
+  remote_user: root
+  apt: name=python-pip
+
+- name: have pip dependencies
+  remote_user: root
+  pip: name=virtualenv
+
+- name: have ~/incoming_examples directory
+  remote_user: "{{ host_example_user }}"
+  file: path=/home/{{ host_example_user }}/incoming_examples
+      state=directory owner={{ host_example_user }}
+
+- name: have example sources
+  remote_user: "{{ host_example_user }}"
+  copy: src=../../../../{{ item }} dest=/home/{{ host_example_user }}/incoming_examples
+  with_items:
+      - 2-dynamic
+      - pip-req.txt
+# this was not a nice way of doing it, but all the nice ways available to me don't
+# work, at least at the moment:
+# - copy module on whole directory will copy everything including py-env, and will
+#   actually fail
+# - synchronize module doesn't work when connection is 'local' (as is the
+#   case when running this stuff locally in a docker container)
+# - I was too lazy to write a custom script. It wouldn't be nicer than this anyway.
+# - if we're running locally in a docker container, we could skip this step and let
+#   Dockerfile copy the directory. I think that's equally un-nice as this.
+
+- name: have pip requirements in virtual environment
+  remote_user: "{{ host_example_user }}"
+  pip: chdir=/home/{{ host_example_user }}/incoming_examples requirements=pip-req.txt virtualenv=py-env
