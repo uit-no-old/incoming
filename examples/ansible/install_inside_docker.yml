@@ -7,6 +7,9 @@
         incoming_example_defs:
             - name: incoming_example_2
               directory: 2-dynamic
-              invocation: python backend.py 4001 4000
+              invocation: python backend.py --port=4002 \
+                  --public_app_host=$PUBLIC_HOSTNAME --internal_app_host=`hostname -i` \
+                  --public_incoming_host=$PUBLIC_INCOMING_HOSTNAME \
+                  --internal_incoming_host=$INTERNAL_INCOMING_HOSTNAME
   vars:
       host_example_user: root

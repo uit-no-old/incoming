@@ -1,6 +1,6 @@
 <html>
 <head>
-<script src="http://{{incoming_host}}:{{incoming_port}}/frontend/incoming.js"></script>
+<script src="http://{{ public_incoming_host }}/incoming/frontend/incoming.js"></script>
 <script type="text/javascript">
 
 window.onload = function() {
@@ -14,7 +14,7 @@ window.onload = function() {
 
     // before we do any uploads, we have to tell incoming!! the host:port of the
     // incoming!! server
-    incoming.set_server_hostname("{{incoming_host}}:{{incoming_port}}");
+    incoming.set_server_hostname("{{ public_incoming_host }}");
 };
 
 function handleFileSelect(evt) {
@@ -88,7 +88,7 @@ function handleFileSelect(evt) {
     // TODO: make another, simpler but less dynamic example.
     var upload_id = "";
     var xhr = new XMLHttpRequest();
-    xhr.open('get', "/frontend/request_upload?filename=" + f.name);
+    xhr.open('get', "/api/frontend/request_upload?filename=" + f.name);
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4) {
             if (xhr.status == 200) {

@@ -3,29 +3,31 @@ import os
 import socket
 import uuid
 import requests
+import click
 from bottle import get, post, request, run, template, static_file, abort
 
-_hostname = socket.gethostname()
+_hostname = socket.getfqdn()
+_config = {}
 
 @get('/')
 def main_page() :
-    return template("frontend_tmpl.html", incoming_host=_hostname,
-            incoming_port=sys.argv[2])
+    return template("frontend_tmpl.html",
+            public_incoming_host=_config["public_incoming_host"])
 
 _uploads = {} # { id (str) : { "secret" : str, "filename" : str }}
 
-@get('/frontend/request_upload')
+@get('/api/frontend/request_upload')
 def request_upload() :
     filename = os.path.split(request.params["filename"])[1]
     secret = str(uuid.uuid4())
 
     # get upload id from incoming!!
     req_params = { "destType" : "file",
-            "signalFinishURL" : "http://%s:%s/backend/upload_finished" % (_hostname, sys.argv[1]),
+            "signalFinishURL" : "http://%s/api/backend/upload_finished" % _config["internal_app_host"],
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
             "signalFinishSecret" : secret,
             }
-    req = requests.post("http://localhost:%s/backend/new_upload" % sys.argv[2], params=req_params)
+    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 
     # if status code is OK, the request returns the upload id in the return body. If the status
     # code is an error code, the body contains an error message.
@@ -38,7 +40,7 @@ def request_upload() :
     return upload_id
 
 
-@post('/backend/upload_finished')
+@post('/api/backend/upload_finished')
 def retrieve_incoming_file() :
     # if you have a webserver / reverse proxy in front of your web app, you
     # might want to make it block external access to URLs starting with
@@ -67,14 +69,33 @@ def retrieve_incoming_file() :
     del _uploads[request.params["id"]]
     return ret # we can return "done" or "wait" here. If "done", then for incoming
                # the upload is history now. If "wait", then incoming will wait until
-               # we access POST /backend/finish_upload
+               # we access POST /incoming/backend/finish_upload
    # What happens now (in case of success): the incoming!! backend will signal
    # the frontend that the upload is done. Through a JS callback, your frontend
    # will be able to know as well.
 
 
+@click.command()
+@click.option('--public_incoming_host', help='(public) incoming host name[:port].',
+        default=_hostname+':4000')
+@click.option('--internal_incoming_host', help='(internal) incoming host name[:port].',
+        default='localhost:4000')
+@click.option('--public_app_host', help='(public) app host name[:port].',
+        default=_hostname+':4002')
+@click.option('--internal_app_host', help='(internal) app host name[:port] visible to incoming.',
+        default='localhost:4002')
+@click.option('--port', help='port web app should listen on',
+        default=4002)
+def run_server(public_incoming_host, internal_incoming_host,
+        public_app_host, internal_app_host, port) :
+    global _config
+    _config["public_incoming_host"] = public_incoming_host
+    _config["internal_incoming_host"] = internal_incoming_host
+    _config["public_app_host"] = public_app_host
+    _config["internal_app_host"] = internal_app_host
+    _config["port"] = port
+
+    run(host='0.0.0.0', port=_config["port"])
+
 if __name__ == "__main__" :
-    if len(sys.argv) != 3 :
-        print "usage: backend.py <server_port> <incoming!!_port>"
-        sys.exit(1)
-    run(host='0.0.0.0', port=sys.argv[1])
+    run_server()

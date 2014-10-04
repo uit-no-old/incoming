@@ -15,5 +15,11 @@
         image_name: 'lars.tiede/incoming_examples'
         image_tag: 'latest'
         remove_image_from_host: False
+      - role: build_and_save_container
+        dockerfile_dir: '../example_webserver/'
+        image_file_name: 'incoming_example_webserver'
+        image_name: 'lars.tiede/incoming_example_webserver'
+        image_tag: 'latest'
+        remove_image_from_host: False
   vars:
       - image_storage_dir: docker_images

@@ -250,7 +250,7 @@ _incoming_lib = function() {
             ul.state_msg = "connecting to upload server";
 
             // open websocket TODO make sure it's the same security as the whole page (encrypted or non-encrypted)
-            ws = new WebSocket('ws://' + server_hostname + '/frontend/upload_ws');
+            ws = new WebSocket('ws://' + server_hostname + '/incoming/frontend/upload_ws');
             //ws.binaryType = "arraybuffer"; // relevant only for recv? http://dev.w3.org/html5/websockets/#dom-websocket-binarytype
 
             ws.onopen = function onopen() {

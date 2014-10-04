@@ -1,5 +1,4 @@
 + /ansible.cfg
 + /inside-docker.yml
-+ /inventory/
 + /roles/
 - /*
