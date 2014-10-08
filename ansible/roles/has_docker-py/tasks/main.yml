@@ -1,0 +1,14 @@
+---
+- name: have python-pip (distros using apt)
+  remote_user: root
+  apt: name=python-pip
+  when: ansible_os_family == "Debian"
+
+- name: have python-pip (distros using yum)
+  remote_user: root
+  yum: name=python-pip
+  when: ansible_os_family == "RedHat"
+
+- name: have docker-py
+  remote_user: root
+  pip: name=docker-py

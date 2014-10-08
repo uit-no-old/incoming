@@ -1,8 +1,4 @@
 ---
-- name: have docker-py
-  remote_user: root
-  pip: name=docker-py
-
 - name: have ~/{{ image_file_name }}_project directory
   remote_user: "{{ host_build_user }}"
   file: dest="/home/{{ host_build_user }}/{{ image_file_name }}_project" state=directory

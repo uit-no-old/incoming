@@ -21,18 +21,18 @@ UploadMaxIdleDurationS: 43200 # 12 hours
 
 # how long may reads and writes to the websocket take before they are timed out?
 # this must be smaller than the reconnect attempt interval in the javascript
-# library in ws.onclose (which is as of now set to 20 seconds)
-WebsocketConnectionTimeoutS: 10
+# library in ws.onclose (which is as of now set to 60 seconds)
+WebsocketConnectionTimeoutS: 58
 
 # for uploads to files: where should files be stored until the web app moves /
 # deletes them?
 # Relative paths are evaluated relative to current working directory
-StorageDir: '/var/incoming_uploads'
+StorageDir: '/var/incoming/uploads'
 
 # how long may the 'upload is finished' request to the app backend take before
 # the upload is assumed cancelled and the file deleted.
-# This must be shorter than UploadMaxIdleDurationS.
-HandoverTimeoutS: 30
+# This must be shorter than UploadMaxIdleDurationS and WebsocketConnectionTimeoutS.
+HandoverTimeoutS: 55
 
 # how long after Incoming!! signals a complete upload to app backend should Incoming!!
 # assume the upload cancelled and delete the file? (only if upload is configured to

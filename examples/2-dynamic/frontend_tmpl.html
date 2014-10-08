@@ -75,7 +75,14 @@ function handleFileSelect(evt) {
         input_pause.disabled = !uploader.can_pause;
         input_pause.checked = uploader.paused;
         input_btn_cancel.disabled = !uploader.can_cancel;
-    }
+    };
+
+    var finished = function(uploader) {
+        update(uploader);
+
+        // add uploaded file to the list of files that can be downloaded
+        document.getElementById("uploaded_files_list").innerHTML += '<li><a href="uploads/' + uploader.filename + '" target=_blank>' + uploader.filename + '</a></li>';
+    };
 
     var f = evt.target.files[0]; // f is a File object
     if (typeof f === 'undefined') { return; }
@@ -97,7 +104,7 @@ function handleFileSelect(evt) {
                 // when we got our id, we can start uploading!
                 uploader = incoming.Uploader(upload_id, f);
                 uploader.onprogress = update;
-                uploader.onfinished = update;
+                uploader.onfinished = finished;
                 uploader.oncancelled = update;
                 uploader.onerror = update;
                 window.onbeforeunload = function(e) { uploader.cancel("browser window unload"); };
@@ -134,6 +141,14 @@ function handleFileSelect(evt) {
     <tr><td>KB acked:</td><td><output id="stats_kb_acked"></output></td></tr>
     <tr><td>KB ahead:</td><td><output id="stats_kb_ahead"></output></td></tr>
 </table></p>
+
+<p>Uploaded files:
+<ul id="uploaded_files_list">
+% for filename in uploads:
+    <li><a href="uploads/{{ filename }}" target=_blank>{{ filename }}</a></li>
+% end
+</ul>
+</p>
 </body>
 
 <script type="text/javascript">

@@ -460,6 +460,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		time.Duration(appVars.config.HandoverConfirmTimeoutS)*time.Second)
 
 	// wait until uploader is finished.
+	// TODO: websocket read might time out. We need a method to prolong its timeout!
 	for cont := true; cont; {
 		select {
 		case recv, ok := <-wsR:
@@ -476,9 +477,10 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if err != nil {
-		log.Printf("uploader couldn't hand file over to the application at %s",
-			uploader.GetSignalFinishURL().String())
-		_ = sendJSON(MsgError{Msg: "Couldn't hand file over to the application"})
+		errStr := fmt.Sprintf("uploader couldn't hand file over to the application at %s: %v",
+			uploader.GetSignalFinishURL().String(), err)
+		log.Printf(errStr)
+		_ = sendJSON(MsgError{Msg: errStr})
 		_ = closeWebsocketNormally(conn, "")
 		return
 	}

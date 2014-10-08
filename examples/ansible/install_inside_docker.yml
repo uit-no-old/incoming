@@ -7,9 +7,15 @@
         incoming_example_defs:
             - name: incoming_example_2
               directory: 2-dynamic
-              invocation: python backend.py --port=4002 \
-                  --public_app_host=$PUBLIC_HOSTNAME --internal_app_host=`hostname -i` \
-                  --public_incoming_host=$PUBLIC_INCOMING_HOSTNAME \
-                  --internal_incoming_host=$INTERNAL_INCOMING_HOSTNAME
+              invocation: python backend.py --port=4002 --public_app_host=$PUBLIC_HOSTNAME --internal_app_host=`hostname -i`:4002 --public_incoming_host=$PUBLIC_INCOMING_HOSTNAME --internal_incoming_host=$INTERNAL_INCOMING_HOSTNAME
   vars:
       host_example_user: root
+
+- hosts: localhost
+  connection: local
+  tasks:
+      - name: install SSH keys
+        authorized_key: user=root key="{{ lookup('file', item) }}"
+        # " this just for vim syntax highlighting bug
+        with_fileglob:
+            authorized_keys/*

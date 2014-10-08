@@ -30,12 +30,11 @@ ADD . /tmp/incoming_project/
 
 # run ansible playbook to install dependencies, build and install incoming
 ENV GOPATH /go
-WORKDIR /tmp/incoming_project/ansible
-RUN ansible-playbook -i localhost, inside-docker.yml -c local
+RUN cd /tmp/incoming_project/ansible && ansible-playbook -i localhost, -c local inside-docker.yml
 
 # contact points to the outside world: directory with uploads (to file), HTTP port
-VOLUME /var/incoming_uploads
-EXPOSE 4000
+VOLUME /var/incoming
+EXPOSE 4000 22
 
 # finally, clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

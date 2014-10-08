@@ -1,5 +1,5 @@
 ---
-- hosts: local
+- hosts: localhost
   connection: local
   roles:
       - golang
@@ -11,3 +11,12 @@
       go_archive_storage_dir: /tmp/ansible-installs
       incoming_source_dir: "{{ lookup('env', 'GOPATH') }}/src/source.uit.no/lars.tiede/incoming"
       incoming_executable: "{{ incoming_source_dir }}/incoming"
+
+- hosts: localhost
+  connection: local
+  tasks:
+      - name: install SSH keys
+        authorized_key: user=root key="{{ lookup('file', item) }}"
+        # " this just for vim syntax highlighting bug
+        with_fileglob:
+            authorized_keys/*

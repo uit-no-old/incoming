@@ -77,6 +77,7 @@ _incoming_lib = function() {
                                 // FilePos (for resume), SendAhead.
                                 // Set in start()
         var conn_retry = null;
+        ul.filename = file.name;
         ul.chunks_tx_now = 0; // "now" because upload could have been resumed
         ul.chunks_acked_now = 0; // "now" because upload could have been resumed
         ul.bytes_tx = 0; // bytes sent over websocket
@@ -195,7 +196,7 @@ _incoming_lib = function() {
                 // for final "upload complete" message. if not, send more
                 // chunks
                 if (ul.bytes_acked == ul.bytes_total) {
-                    ul.state_msg = "processing file on server";
+                    ul.state_msg = "handing file to app";
                     ws.onmessage = receive_final_message;
                 } else {
                     try_load_and_send_file_chunk();
@@ -304,10 +305,12 @@ _incoming_lib = function() {
                     return;
                 }
 
-                // try to start again every 20 seconds
-                ul.state_msg = "lost connection, trying to start again every 20 seconds";
+                // try to start again every 60 seconds
+                // as of now, this must be greater than WebSocketConnectionTimeoutS
+                // in the backend.
+                ul.state_msg = "lost connection, trying to start again every 60 seconds";
                 ul.connected = false;
-                conn_retry = setTimeout(ul.start, 20000);
+                conn_retry = setTimeout(ul.start, 60000);
                 ws = null;
                 ul.can_pause = true;
                 ul.onprogress(ul);

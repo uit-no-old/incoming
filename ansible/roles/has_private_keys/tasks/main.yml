@@ -1,0 +1,8 @@
+---
+- name: have /root/.ssh directory
+  remote_user: root
+  file: path=/root/.ssh state=directory mode=0700
+
+- name: have private SSH keys
+  remote_user: root
+  synchronize: src=private_keys/ dest=/root/.ssh/ owner=no

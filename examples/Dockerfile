@@ -33,7 +33,7 @@ ADD . /tmp/incoming_examples
 RUN cd /tmp/incoming_examples/ansible && ansible-playbook -i localhost, install_inside_docker.yml -c local
 
 # contact points to the outside world: HTTP port
-EXPOSE 4001
+EXPOSE 4002 22
 
 # finally, clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -1,0 +1,15 @@
+---
+- name: have /root/uploaded_docker_images
+  remote_user: root
+  file: path=/root/uploaded_docker_images state=directory
+
+- name: have "{{ image_file_name }}" image
+  remote_user: root
+  copy: src="{{ image_storage_dir }}/{{ image_file_name }}.tar.gz"
+      dest="/root/uploaded_docker_images/{{ image_file_name }}.tar.gz"
+  register: image_upload
+
+- name: load "{{ image_file_name }}" image into docker if necessary
+  remote_user: root
+  shell: gunzip -c /root/uploaded_docker_images/{{ image_file_name }}.tar.gz | docker load
+  when: image_upload.changed

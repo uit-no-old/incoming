@@ -1,0 +1,25 @@
+# {{ ansible_managed }}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://{{ webapps_internal_ip }}:{{ example_port }};
+    }
+
+    location /api/backend/ {
+        deny all;
+    }
+
+
+    location /incoming/ {
+        proxy_pass http://{{ incoming_internal_ip }}:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    location /incoming/backend/ {
+        deny all;
+    }
+}

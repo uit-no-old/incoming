@@ -1,0 +1,68 @@
+---
+- name: kill and remove incoming, incoming_examples and incoming_example_webserver containers
+  remote_user: root
+  shell: docker kill {{ item }} && docker rm {{ item }}
+  with_items:
+      - incoming_example_webserver
+      - incoming_examples
+      - incoming
+  ignore_errors: True
+# TODO: this should be done only if we installed new images. How can we get
+# that info over from the other role?
+
+- name: have incoming container running
+  remote_user: root
+  docker: image="lars.tiede/incoming" name="incoming" state="running"
+      {% if incoming_port_maps is defined %} ports={{ incoming_port_maps }} {% endif %}
+  register: container_incoming
+
+# we need the internal IP address of the container above.
+- set_fact:
+    #incoming_ip: "{{ docker_containers|selectattr('Name', 'equalto', '/incoming')|first.NetworkSettings.IPAddress }}" # this should work but doesn't because my Ansible version doesn't know the 'equalto' Jinja2 test yet :(
+    #incoming_internal_ip: "{% for container in docker_containers %}{% if container.Name == '/incoming' %}{{ container.NetworkSettings.IPAddress }}{% endif %}{% endfor %}"
+    # as it turns out, docker_containers holds info only about the containers
+    # affected by the last call to the docker module, not all containers
+    # running on the host. So the stuff above is actually overkill.
+    incoming_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
+
+- name: have web app example container running
+  remote_user: root
+  docker: image="lars.tiede/incoming_examples" name="incoming_examples" state="running"
+      volumes_from="incoming"
+      {% if incoming_examples_port_maps is defined %} ports={{ incoming_examples_port_maps }} {% endif %}
+      env='PUBLIC_HOSTNAME={{ ansible_fqdn }},PUBLIC_INCOMING_HOSTNAME={{ ansible_fqdn }},INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000'
+      #' this just for buggy vim syntax highlight
+  register: container_webapp
+
+- set_fact:
+    webapps_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
+
+# the following, for reference
+- debug: var=container_incoming.ansible_facts.docker_containers[0]
+- debug: var=container_webapp
+#- debug: var=incoming_internal_ip
+#- debug: var=webapps_internal_ip
+
+- name: have directory for dockerized nginx sites-enabled files
+  remote_user: root
+  file: path=/root/docker_webserver_config/sites-enabled state=directory
+
+- name: have directory for dockerized nginx logs
+  remote_user: root
+  file: path=/var/log/nginx-docker state=directory
+
+- name: have nginx server config preamble
+  remote_user: root
+  template: src=sites-enabled/00_http_upgrade_magic dest=/root/docker_webserver_config/sites-enabled/00_http_upgrade_magic
+
+- name: have nginx server config for example app
+  remote_user: root
+  template: src=sites-enabled/example_apps dest=/root/docker_webserver_config/sites-enabled/example_app.conf
+
+- name: have webserver container running
+  remote_user: root
+  docker: image="lars.tiede/incoming_example_webserver"
+      name="incoming_example_webserver" state="running"
+      volumes="/root/docker_webserver_config/sites-enabled:/etc/nginx/sites-enabled,/var/log/nginx-docker:/var/log/nginx"
+      ports="{{ nginx_server_port }}:80,{{ nginx_ssl_server_port }}:443"
+  register: container_webapp

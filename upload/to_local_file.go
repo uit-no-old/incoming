@@ -394,7 +394,10 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 				resp.Body.Close()
 			}
 		}
-		respStr := string(respBody[0:4])
+		var respStr string
+		if err == nil {
+			respStr = string(respBody[0:4])
+		}
 		//log.Printf("Got response from app backend: %s", respStr)
 
 		// response is "done"? yay, we'll be done. response is "wait"? we'll wait...
@@ -432,7 +435,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 			u.state = StateCancelled
 			u.lock_state.Unlock()
 			u.lock.RLock()
-			log.Printf("upload %s handover failed", u.id)
+			log.Printf("upload %s handover failed: %v", u.id, err)
 			u.lock.RUnlock()
 			u.Cancel(false, "handover failed", 0)
 		}

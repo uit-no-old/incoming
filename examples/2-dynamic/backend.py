@@ -2,6 +2,7 @@ import sys
 import os
 import socket
 import uuid
+import shutil
 import requests
 import click
 from bottle import get, post, request, run, template, static_file, abort
@@ -12,7 +13,8 @@ _config = {}
 @get('/')
 def main_page() :
     return template("frontend_tmpl.html",
-            public_incoming_host=_config["public_incoming_host"])
+            public_incoming_host=_config["public_incoming_host"],
+            uploads=os.listdir("uploads"))
 
 _uploads = {} # { id (str) : { "secret" : str, "filename" : str }}
 
@@ -59,7 +61,7 @@ def retrieve_incoming_file() :
     ret = ""
     if request.params["cancelled"] != "yes" :
         incoming_path = request.params["filename"]
-        os.rename(incoming_path, upload["filename"])
+        shutil.move(incoming_path, os.path.join("uploads", upload["filename"]))
         ret = "done"
     else :
         # we don't care. request.params["cancelReason"] contains a text describing
@@ -73,6 +75,11 @@ def retrieve_incoming_file() :
    # What happens now (in case of success): the incoming!! backend will signal
    # the frontend that the upload is done. Through a JS callback, your frontend
    # will be able to know as well.
+
+
+@get('/uploads/<filename:path>')
+def send_uploaded_file(filename) :
+    return static_file(filename, root="uploads")
 
 
 @click.command()
@@ -94,6 +101,9 @@ def run_server(public_incoming_host, internal_incoming_host,
     _config["public_app_host"] = public_app_host
     _config["internal_app_host"] = internal_app_host
     _config["port"] = port
+
+    if not os.path.isdir("uploads") :
+        os.mkdir("uploads")
 
     run(host='0.0.0.0', port=_config["port"])
 

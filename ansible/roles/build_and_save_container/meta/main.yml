@@ -1,0 +1,3 @@
+---
+dependencies:
+    - role: has_docker-py
