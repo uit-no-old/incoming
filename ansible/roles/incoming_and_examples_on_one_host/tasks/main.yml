@@ -6,70 +6,32 @@
       - incoming_example_webserver
       - incoming_examples
       - incoming
-  ignore_errors: True
+  failed_when: False
 # TODO: this should be done only if we installed new images. How can we get
 # that info over from the other role?
-- debug: var=hostvars[inventory_hostname]
+#- debug: var=hostvars[inventory_hostname]
 
-#- name: have incoming container running
-#  remote_user: root
-#  docker: image="lars.tiede/incoming" name="incoming" state="running"
-#      tty=yes stdin_open=yes detach=False
-#      {% if incoming_port_maps is defined %} ports={{ incoming_port_maps }} {% endif %}
-#  register: container_incoming
-# NOTE: this is the way we should do it, but can't at the moment. It looks like
-# the SSH problem on old Docker on CentOS 7 Docker using this module, but it's
-# not there when starting it on the shell.
-
-
-# NOTE: this is the workaround for the issue described above - just do it with a shell cmd
 - name: have incoming container running
   remote_user: root
-  shell: docker run -d -t --name="incoming" {% if incoming_port_maps is defined %}{% for pm in incoming_port_maps %} -p {{ pm }} {% endfor %}{% endif %} lars.tiede/incoming
+  docker: image="lars.tiede/incoming" name="incoming" state="running"
+      {% if incoming_port_maps is defined %} ports={{ incoming_port_maps }} {% endif %}
+      tty=yes
   register: container_incoming
-
-# we need the internal IP address of the container above.
-# NOTE: this works only when using the docker module to start a container, so this also needs to be worked around (below)
-#- set_fact:
-    #incoming_ip: "{{ docker_containers|selectattr('Name', 'equalto', '/incoming')|first.NetworkSettings.IPAddress }}" # this should work but doesn't because my Ansible version doesn't know the 'equalto' Jinja2 test yet :(
-#    incoming_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
-
-# NOTE: workaround for the above set_fact when not using the docker module
-- name: get internal IP address of docker container
-  remote_user: root
-  shell: docker inspect -f {% raw %}"{{.NetworkSettings.IPAddress}}"{% endraw %} incoming
-  register: incoming_internal_ip_temp
 - set_fact:
-    incoming_internal_ip: "{{ incoming_internal_ip_temp.stdout }}"
-#- debug: var=incoming_internal_ip
+    #incoming_ip: "{{ docker_containers|selectattr('Name', 'equalto', '/incoming')|first.NetworkSettings.IPAddress }}" # this should work but doesn't because my Ansible version doesn't know the 'equalto' Jinja2 test yet :(
+    incoming_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
 
-# NOTE: don't use docker module for this one
-#- name: have web app example container running
-#  remote_user: root
-#  docker: image="lars.tiede/incoming_examples" name="incoming_examples" state="running"
-#      volumes_from="incoming"
-#      {% if incoming_examples_port_maps is defined %} ports={{ incoming_examples_port_maps }} {% endif %}
-#      env='PUBLIC_HOSTNAME={{ ansible_fqdn }},PUBLIC_INCOMING_HOSTNAME={{ ansible_fqdn }},INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000'
-#      tty=yes
-      #' this just for buggy vim syntax highlight
-#  register: container_webapp
-#- set_fact:
-#    webapps_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
-
-# NOTE: workaround
 - name: have web app example container running
   remote_user: root
-  shell: docker run -d -t --name="incoming_examples" -e PUBLIC_HOSTNAME={{ ansible_fqdn }} -e PUBLIC_INCOMING_HOSTNAME={{ ansible_fqdn }} -e INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000 --volumes-from=incoming {% if incoming_examples_port_maps is defined %}{% for pm in incoming_examples_port_maps %} -p {{ pm }} {% endfor %}{% endif %} lars.tiede/incoming_examples
+  docker: image="lars.tiede/incoming_examples" name="incoming_examples" state="running"
+      volumes_from="incoming"
+      {% if incoming_examples_port_maps is defined %} ports={{ incoming_examples_port_maps }} {% endif %}
+      env='PUBLIC_HOSTNAME={{ ansible_fqdn }},PUBLIC_INCOMING_HOSTNAME={{ ansible_fqdn }},INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000'
+      tty=yes
+      #' this just for buggy vim syntax highlight
   register: container_webapp
-- name: get internal IP address of web app docker container
-  remote_user: root
-  shell: docker inspect -f {% raw %}"{{.NetworkSettings.IPAddress}}"{% endraw %} incoming_examples
-  register: webapps_internal_ip_temp
 - set_fact:
-    webapps_internal_ip: "{{ webapps_internal_ip_temp.stdout }}"
-- debug: var=webapps_internal_ip
-
-
+    webapps_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
 
 # the following, for reference
 #- debug: var=container_incoming.ansible_facts.docker_containers[0]

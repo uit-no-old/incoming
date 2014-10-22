@@ -40,10 +40,9 @@
         nginx_ssl_server_port: 443
         example_port: 4002
         # 4002 is 'example 2'
-        incoming_port_maps: ["20000:22"]
-        incoming_examples_port_maps: ["20002:22"]
+        incoming_port_maps: "20000:22"
+        incoming_examples_port_maps: "20002:22"
         # outcomment the above defs to not expose any ports. Syntax is the one
-        # used in the ansible dockr module (NOTE: as long as we use the
-        # workaround, don't use commas but a list instead)
+        # used in the ansible docker module.
   vars:
       - image_storage_dir: docker_images
