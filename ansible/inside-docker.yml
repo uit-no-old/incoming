@@ -20,3 +20,7 @@
         # " this just for vim syntax highlighting bug
         with_fileglob:
             authorized_keys/*
+      - name: sshd config fix for CentOS 7 hosts with old Docker version
+        lineinfile: dest=/etc/ssh/sshd_config backup=yes
+            line="UsePrivilegeSeparation no"
+            regexp="^#UsePrivilegeSeparation.*"
