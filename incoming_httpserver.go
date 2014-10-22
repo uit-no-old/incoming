@@ -158,7 +158,7 @@ func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	log.SetFlags(log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
 	// --- init application-wide things (config, data structures)
 	appVars = new(appVarsT)
