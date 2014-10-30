@@ -16,6 +16,7 @@
   remote_user: "{{ host_example_user }}"
   copy: src=../../../../{{ item }} dest=/home/{{ host_example_user }}/incoming_examples
   with_items:
+      - 1-simple
       - 2-dynamic
       - pip-req.txt
 # this was not a nice way of doing it, but all the nice ways available to me don't

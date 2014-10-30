@@ -39,6 +39,7 @@
         nginx_server_port: 80
         nginx_ssl_server_port: 443
         example_port: 4002
+        # 4001 is 'example 1'
         # 4002 is 'example 2'
         incoming_port_maps: "20000:22"
         incoming_examples_port_maps: "20002:22"

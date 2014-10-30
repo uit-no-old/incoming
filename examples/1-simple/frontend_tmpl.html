@@ -1,0 +1,81 @@
+<html>
+<head>
+<script src="http://{{ public_incoming_host }}/incoming/frontend/incoming.js"></script>
+<script type="text/javascript">
+
+window.onload = function() {
+    // make sure that the incoming lib has loaded. This might not be the case
+    // if some browser add-on has blocked it, or if incoming.js could not be
+    // downloaded from the Incoming!! server for some reason.
+    if (typeof incoming === 'undefined') {
+        var output_state_msg = document.getElementById("stats_state_msg");
+        output_state_msg.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
+        return;
+    }
+};
+
+function upload_file(upload_id, f) {
+    // bail out if we did not get a file to upload
+    if (typeof f === 'undefined') { return; }
+
+    // before we do any uploads, we have to tell the incoming!! js library the
+    // host:port of the incoming!! server
+    incoming.set_server_hostname("{{ public_incoming_host }}");
+
+    // define a callback for all sorts of progress in the uploader
+    var update = function(uploader) {
+        document.getElementById("stats_state_msg").innerHTML = uploader.state_msg;
+        document.getElementById("stats_progress_bar").value = uploader.frac_complete;
+    };
+
+    // define a callback for when upload is finished (i.e., the web app backend
+    // got the file)
+    var finished = function(uploader) {
+        var output_node = document.getElementById("output_finished");
+        output_node.innerHTML = "<p><b>Upload is finished. Reload this page to upload another file or to see the uploaded file in the list below.</b></p>";
+        output_node.hidden = false;
+    };
+
+    // initialize uploader
+    uploader = incoming.Uploader(upload_id, f);
+    uploader.onprogress = update;
+    uploader.onfinished = finished;
+
+    // when everything is set up, unleash uploader. It will do its thing in possibly
+    // many asynchronous steps, and call the callbacks when appropriate.
+    uploader.start();
+
+    // once we're uploading, the user may not select another file (at least in
+    // this simple example).
+    document.getElementById("input_file").disabled = true;
+}
+</script>
+</head>
+
+
+<body>
+
+<p>
+<input type="file" id="input_file"
+    onchange="upload_file('{{ upload_id }}', this.files[0])"/>
+</p>
+
+<p>
+<table>
+    <tr><td>File upload state:</td><td><output id="stats_state_msg"></output></td></tr>
+    <tr><td>Progress of transfer to Incoming!!:</td><td><progress id="stats_progress_bar" value="0" max="1"></progress></td></tr>
+</table>
+</p>
+
+<div id="output_finished" hidden></div>
+
+<p>Uploaded files:
+<ul id="uploaded_files_list">
+% for filename in uploads:
+    <li><a href="uploads/{{ filename }}" target=_blank>{{ filename }}</a></li>
+% end
+</ul>
+</p>
+
+</body>
+</html>

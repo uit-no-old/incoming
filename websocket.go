@@ -35,6 +35,7 @@ sends to incoming!!, requesting to upload a file with a given upload id.
 type MsgUploadReq struct {
 	Id          string
 	LengthBytes int64
+	Name        string
 }
 
 // MsgUploadConf is sent to the browser and contains parameters for the upload,
@@ -281,9 +282,9 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer uploader.UnbindFromSocketHandler()
 
-	// if upload is new (not resumed), set fie size. Otherwise, make sure
-	// filesize from the request is the same as in uploader (the file on the
-	// client side might have changed...)
+	// if upload is new (not resumed), set file size and name. Otherwise, make
+	// sure filesize from the request is the same as in uploader (the file on
+	// the client side might have changed...)
 	state := uploader.GetState()
 	if state == upload.StateInit {
 		err = uploader.SetFileSize(req.LengthBytes)
@@ -291,6 +292,15 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("File size from %s is problematic: %s",
 				conn.RemoteAddr().String(), err.Error())
 			_ = sendJSON(MsgError{Msg: "File probably too large"})
+			_ = closeWebsocketNormally(conn, "")
+			return
+		}
+		err = uploader.SetFileName(req.Name)
+		if err != nil {
+			errMsg := fmt.Sprintf("File name from %s is problematic: %s",
+				conn.RemoteAddr().String(), err.Error())
+			log.Printf(errMsg)
+			_ = sendJSON(MsgError{Msg: errMsg})
 			_ = closeWebsocketNormally(conn, "")
 			return
 		}

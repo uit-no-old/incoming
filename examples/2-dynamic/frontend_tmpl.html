@@ -17,13 +17,17 @@ window.onload = function() {
     incoming.set_server_hostname("{{ public_incoming_host }}");
 };
 
-function handleFileSelect(evt) {
-    var uploader = null;
+function upload_file(f) {
+    // bail out if we did not get a file to upload
+    if (typeof f === 'undefined') { return; }
+
+    var uploader = null; // this will be an incoming.Uploader object
 
     var input_file_select = document.getElementById("input_file");
     var input_pause = document.getElementById("input_pause");
     var input_btn_cancel = document.getElementById("input_btn_cancel");
     var output_state_msg = document.getElementById("stats_state_msg");
+    var output_progress_bar = document.getElementById("stats_progress_bar");
     var output_error_msg = document.getElementById("stats_error_msg");
     var output_cancel_msg = document.getElementById("stats_cancel_msg");
     var output_connected = document.getElementById("stats_connected");
@@ -37,27 +41,29 @@ function handleFileSelect(evt) {
     var output_kb_acked = document.getElementById("stats_kb_acked");
     var output_kb_ahead = document.getElementById("stats_kb_ahead");
 
+    // while we're uploading, the user may not select a new file. She may after
+    // upload is done, though. Note that you can easily implement multiple
+    // concurrent uploads using several Uploader objects.
     input_file_select.disabled = true;
 
     // click handler for cancel button
-    var cancel_clicked = function() {
+    input_btn_cancel.onclick = function cancel_clicked() {
         uploader.cancel("user cancelled manually");
     };
-    input_btn_cancel.onclick = cancel_clicked;
 
     // click handler for pause checkbox
-    var pause_clicked = function() {
+    input_pause.onclick = function pause_clicked() {
         if (input_pause.checked) {
             uploader.pause("pause");
         } else {
             uploader.pause("unpause");
         }
     };
-    input_pause.onclick = pause_clicked;
 
     // uploader callback for updating all the HTML things
     var update = function(uploader) {
         output_state_msg.innerHTML = uploader.state_msg;
+        output_progress_bar.value = uploader.frac_complete;
         output_error_msg.innerHTML = uploader.error_msg;
         output_cancel_msg.innerHTML = uploader.cancel_msg;
         output_connected.innerHTML = uploader.connected.toString();
@@ -77,22 +83,18 @@ function handleFileSelect(evt) {
         input_btn_cancel.disabled = !uploader.can_cancel;
     };
 
+    // uploader callback for when upload is finished (i.e., the web app backend
+    // got the file)
     var finished = function(uploader) {
-        update(uploader);
-
         // add uploaded file to the list of files that can be downloaded
         document.getElementById("uploaded_files_list").innerHTML += '<li><a href="uploads/' + uploader.filename + '" target=_blank>' + uploader.filename + '</a></li>';
     };
 
-    var f = evt.target.files[0]; // f is a File object
-    if (typeof f === 'undefined') { return; }
-
-    // get an upload id from "my" backend (not incoming!! directly)
-    // Note that you could implement this differently. For example, you could
-    // let your backend make an upload id before delivering this page to the
-    // browser, and then deliver the id together with the page, thus making this
-    // request unneccessary.
-    // TODO: make another, simpler but less dynamic example.
+    // get an upload id from "my" backend (not incoming!! directly).
+    // When we got the id, we start uploading.
+    //
+    // HTTP requests are not pretty in vanilla JavaScript, but we do it here to
+    // avoid using any particular JS framework.
     var upload_id = "";
     var xhr = new XMLHttpRequest();
     xhr.open('get', "/api/frontend/request_upload?filename=" + f.name);
@@ -101,13 +103,12 @@ function handleFileSelect(evt) {
             if (xhr.status == 200) {
                 upload_id = xhr.responseText;
 
-                // when we got our id, we can start uploading!
+                // when we got our id, we can start uploading
                 uploader = incoming.Uploader(upload_id, f);
                 uploader.onprogress = update;
                 uploader.onfinished = finished;
-                uploader.oncancelled = update;
-                uploader.onerror = update;
-                window.onbeforeunload = function(e) { uploader.cancel("browser window unload"); };
+                uploader.oncancelled = update; // could do something better here
+                uploader.onerror = update; // could do something better here
                 uploader.start();
 
             } else {
@@ -120,14 +121,18 @@ function handleFileSelect(evt) {
 </script>
 </head>
 
+
 <body>
+
 <p>
-<input type="file" id="input_file" name="files[]"/><br/>
+<input type="file" id="input_file" onchange="upload_file(this.files[0])"/><br/>
 <input type="checkbox" id="input_pause" disabled/>pause<br/>
 <button id="input_btn_cancel" disabled/>cancel</button><br/>
 </p>
+
 <p><table>
-    <tr><td>State message:</td><td><output id="stats_state_msg"></output></td></tr>
+    <tr><td>File upload state:</td><td><output id="stats_state_msg"></output></td></tr>
+    <tr><td>Progress of transfer to Incoming!!:</td><td><progress id="stats_progress_bar" value="0" max="1"></progress></td></tr>
     <tr><td>Error message:</td><td><output id="stats_error_msg"></output></td></tr>
     <tr><td>Cancel message:</td><td><output id="stats_cancel_msg"></output></td></tr>
     <tr><td>Connected:</td><td><output id="stats_connected"></output></td></tr>
@@ -149,10 +154,6 @@ function handleFileSelect(evt) {
 % end
 </ul>
 </p>
+
 </body>
-
-<script type="text/javascript">
-document.getElementById('input_file').addEventListener('change', handleFileSelect, false);
-</script>
-
 </html>

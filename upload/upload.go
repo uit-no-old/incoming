@@ -33,8 +33,17 @@ type Uploader interface {
 	// SetFileSize should be called once before any chunks are uploaded.
 	SetFileSize(int64) error
 
+	// SetFileName should be called once before any chunks are uploaded. The
+	// name is the name of the file as reported by the browser. It is not the
+	// name Incoming!! should use internally.
+	SetFileName(string) error
+
 	// GetFileSize returns the size of the file that is being uploaded.
 	GetFileSize() int64
+
+	// GetFileName returns the name of the file, as reported by the browser.
+	// This is not necessarily the actual file name Incoming!! uses internally.
+	GetFileName() string
 
 	// GetFilePos returns the current cursor position within the uploaded
 	// file, i.e. how many bytes have been uploaded already.

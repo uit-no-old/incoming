@@ -43,11 +43,12 @@ type UploadToLocalFile struct {
 
 	boundToSocketHandler bool
 
-	dir      string
-	path     string
-	fd       *os.File
-	filePos  int64
-	fileSize int64
+	dir             string
+	path            string
+	nameFromBrowser string
+	fd              *os.File
+	filePos         int64
+	fileSize        int64
 
 	signalFinishURL        *url.URL
 	signalFinishSecret     string
@@ -203,6 +204,12 @@ func (u *UploadToLocalFile) GetFileSize() int64 {
 	return u.fileSize
 }
 
+func (u *UploadToLocalFile) GetFileName() string {
+	u.lock.RLock()
+	defer u.lock.RUnlock()
+	return u.nameFromBrowser
+}
+
 func (u *UploadToLocalFile) SetFileSize(size int64) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
@@ -211,6 +218,18 @@ func (u *UploadToLocalFile) SetFileSize(size int64) error {
 	}
 
 	u.fileSize = size
+	u.resetTimeout(u.idleTimeout)
+	return nil
+}
+
+func (u *UploadToLocalFile) SetFileName(name string) error {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+	if u.state != StateInit {
+		return errors.New("too late to call SetFileName")
+	}
+
+	u.nameFromBrowser = name
 	u.resetTimeout(u.idleTimeout)
 	return nil
 }
@@ -368,6 +387,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		v := url.Values{}
 		v.Set("id", u.id)
 		v.Set("filename", u.path)
+		v.Set("filenameFromBrowser", u.nameFromBrowser)
 		v.Set("secret", u.signalFinishSecret)
 		v.Set("cancelled", "no")
 		v.Set("cancelReason", "")
@@ -518,6 +538,7 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	v := url.Values{}
 	v.Set("id", id)
 	v.Set("filename", "")
+	v.Set("filenameFromBrowser", u.nameFromBrowser)
 	v.Set("secret", signalFinishSecret)
 	v.Set("cancelled", "yes")
 	v.Set("cancelReason", reason)

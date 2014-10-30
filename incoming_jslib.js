@@ -6,12 +6,13 @@ _incoming_lib = function() {
         server_hostname = hostname;
     };
 
-    var msgUploadReq = function msgUploadReq(upload_id, length_bytes) {
+    var msgUploadReq = function msgUploadReq(upload_id, length_bytes, name) {
         var msg = {
             MsgType: "MsgUploadReq",
             MsgData : {
                 Id: upload_id,
-                LengthBytes: length_bytes
+                LengthBytes: length_bytes,
+                Name: name
             }
         };
         return JSON.stringify(msg);
@@ -83,6 +84,7 @@ _incoming_lib = function() {
         ul.bytes_tx = 0; // bytes sent over websocket
         ul.bytes_acked = 0; // bytes acknowledged by incoming backend
         ul.bytes_total = file.size;
+        ul.frac_complete = 0.0;
         ul.finished = false;
         ul.cancelled = false;
         ul.cancelling = false;
@@ -188,6 +190,7 @@ _incoming_lib = function() {
             if (obj.MsgType == "MsgChunkAck") {
                 // update state
                 ul.bytes_acked += obj.MsgData.ChunkSize;
+                ul.frac_complete = ul.bytes_acked / ul.bytes_total;
                 ul.bytes_ahead -= obj.MsgData.ChunkSize;
                 ul.chunks_acked_now += 1;
                 ul.chunks_ahead -= 1;
@@ -208,6 +211,7 @@ _incoming_lib = function() {
             } else if (obj.MsgType == "MsgError") {
                 ul.error_code = obj.MsgData.ErrorCode;
                 ul.error_msg = obj.MsgData.Msg;
+                ul.onprogress(ul);
                 ul.onerror(ul);
                 ul.cancel("Error from server: " + ul.error_msg);
             } else if (obj.MsgType == "MsgCancel") {
@@ -226,12 +230,14 @@ _incoming_lib = function() {
                 ul.finished = true;
                 ws.close();
                 ul.state_msg = "all done";
+                ul.onprogress(ul);
                 ul.onfinished(ul);
             } else if (obj.MsgType == "MsgError") {
                 ul.error_code = obj.MsgData.ErrorCode;
                 ul.error_msg = obj.MsgData.Msg;
                 ws.close();
                 ul.state_msg = "Upload failed on server side: " + ul.error_msg;
+                ul.onprogress(ul);
                 ul.onerror(ul);
             }
         };
@@ -242,6 +248,7 @@ _incoming_lib = function() {
             ul.chunks_tx_now = 0;
             ul.chunks_acked_now = 0;
             ul.bytes_tx = ul.bytes_acked;
+            ul.frac_complete = ul.bytes_acked / ul.bytes_total;
             ul.chunks_ahead = 0;
             ul.bytes_ahead = 0;
             ul.connected = false;
@@ -261,7 +268,7 @@ _incoming_lib = function() {
                 ul.state_msg = "upload protocol handshake"
 
                 // send upload request
-                ws.send(msgUploadReq(upload_id, file.size));
+                ws.send(msgUploadReq(upload_id, file.size, file.name));
 
                 // receive error or upload config
                 ws.onmessage = function prot01_recvConfig(msg) {
@@ -269,12 +276,14 @@ _incoming_lib = function() {
                     if (obj.MsgType == "MsgError") {
                         ul.error_code = obj.MsgData.ErrorCode;
                         ul.error_msg = obj.MsgData.Msg;
+                        ul.onprogress(ul);
                         ul.onerror(ul);
                         ul.cancel("can't handle '" + ul.error_msg + "'");
                     } else if (obj.MsgType == "MsgUploadConf") {
                         // got upload config. set us up for upload!
                         upload_conf = obj.MsgData;
                         ul.bytes_acked = upload_conf.FilePos;
+                        ul.frac_complete = ul.bytes_acked / ul.bytes_total;
                         ul.bytes_tx = ul.bytes_acked;
                         ws.send(msgAck(true));
                         // we might already be finished uploading data...
@@ -353,6 +362,7 @@ _incoming_lib = function() {
                             ul.state_msg = "cancelled: " + reason;
                             ul.cancel_msg = reason;
                             ws.close();
+                            ul.onprogress(ul);
                             ul.oncancelled(ul);
                         } else {
                             // we have received a different message - most
@@ -374,6 +384,7 @@ _incoming_lib = function() {
                     ul.cancel_msg = reason;
                     ul.error_code = 0;
                     ul.error_msg = "upload is cancelled, but the backend doesn't know it yet";
+                    ul.onprogress(ul);
                     ul.onerror(ul);
                     ul.oncancelled(ul)
                 }
