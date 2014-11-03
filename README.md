@@ -1,19 +1,54 @@
 Incoming!!
 ==========
 
-Large file upload, usable from any web app.
+Large file uploads with web browsers are frustrating, they may even break your web app when implemented wrong, and they are not too easy to implement right. Incoming!! handles large file uploads for your web apps so you don't have to. In the browser, it chops up a large file into little pieces, then transfers them over to its own server application, which will put them together, store them, and hand the file over to your web app backend. Disconnects during upload are no problem, and explicit pause / resume is also supported. With Incoming!!, both the complexity and performance impact of large file uploads are off your web app's back.
+
+Incoming!! consists of a server application and a JavaScript client library. The server can run alongside your web app backend or centrally in your organization, and the JavaScript client is used directly in your web app's frontend in the browser. When you want to upload a large file, your web app backend first fetches an upload ticket from the Incoming!! server. Then, using that ticket, your frontend can use the Incoming!! JavaScript library to send the large file to the Incoming!! server. When the upload is finished, the Incoming!! server hands over the file to your web app backend.
+
+Your web app backend and the Incoming!! server communicate through simple HTTP requests: Incoming!! provides an endpoint for handing out upload tickets, and issues a request to your web app backend when an upload is finished. To its JavaScript library, Incoming!! exposes a WebSocket server. Incoming!! also hosts the JavaScript library file.
+
+The Incoming!! server is implemented in Go, and the JavaScript library in, well, JavaScript, without use of external libraries. The whole thing is free and open source, licensed under the permissive TODO LICENSE.
+
+At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide enough upload bandwidth. This use case is always in the back of our heads, but not fully implemented yet.
 
 
-Motivation
-----------
+Usage summary
+-------------
 
-Large file uploads aren't trivial, browsers and webapps / webservers alike still struggle with it. This is because HTTP has no built-in support for streamed uploads, or even only binary file uploads. Instead, files are usually uploaded as part of a regular HTTP request. Webservers and most webapps do not stream HTTP requests, but process them whole. This causes obvious problems with big files.
+Install the Incoming!! server alongside your web app, or centrally for your organization. In your web app backend, you need the following:
 
-One way of avoiding the problem is to chop up the file into small pieces and upload these pieces individually using many HTTP requests or a websocket connection. This is not standardized in any way, and there is no built-in support for this functionality on any popular browsers or webservers yet. Therefore, custom code is needed on the client side (that is, JavaScript that chops up the file and sends the individual parts) and on the server side (a web server / app that receives the parts and assembles them into a large file).
+* you request an *upload ticket* from the Incoming!! server with an HTTP POST request to `/incoming/backend/new_upload`. Parameters include a URL that the Incoming!! server should access later when the upload is finished, so that your web app backend will know when the upload is done. The Incoming!! server answers with a *ticket ID*.
+* you need to provide a route for the aforementioned "upload is finished" URL. It will get an HTTP POST request from the Incoming!! server when an upload is finished. Parameters include the path of the uploaded file on the filesystem both Incoming!! server and your web app backend have access to. Now your web app backend can rename the uploaded file, update your database etc. When the HTTP request returns, the Incoming!! server assumes that the upload is finished.
 
-In order to not have to reinvent the wheel for each application that uses large file uploads, Incoming!! factors out large file uploads into an own application / web server. Any web application can use Incoming!!, which makes its functionality available to the web application frontend via a JavaScript file, and to the web application backend via an HTTP API. It is possible to run Incoming!! alongside an individual web app, or centrally for a whole organization that runs many web apps.
+You can of course customize the whole process a bit, but this is the gist of it.
 
-There is already a large file upload solution out there that UiT uses ([filesender](https://www.filesender.org/)), but it is intended to be used as a standalone application and is not easily integratable into other webapps. Instead of gutting filesender and seeing whether we can factor out the bare upload functionality and then add the bits we need (communication with the web app that uses filesender, javascript code for the web app's frontend), we decided that it is easier to just roll our own.
+In your web app's frontend (i.e., the HTML + JavaScript stuff running in the user's browser), you need the following:
+
+* you need to load the Incoming!! JavaScript library, typically using a `<script>` tag. It is hosted on the Incoming!! server.
+* when you want to upload a file, your web app frontend needs to have a ticket ID from your backend. How your frontend gets one is up to you. Two typical ways of doing this could be your backend rendering the ticket ID into a template for a file upload page, or to do it dynamically with AJAX. (The reason for letting you do this in your app instead of letting Incoming!! do this is to avoid burdening Incoming!! with any sort of user authentication - this is your app's job, not Incoming!!'s.)
+* when you got a ticket, you can use `incoming.Uploader()` to initialize an Uploader object, and `Uploader.start()` to start uploading. You can provide callbacks for progress, completion, etc., and a bunch of variables are available in an Uploader object for you to track and inspect uploads.
+* as soon as an Uploader object calls the completion callback, you know that the file has been uploaded and handed over to your web app backend.
+
+Again, you can customize the process a bit, but that's the gist.
+
+When you set all of this up, you should make sure that Incoming!!'s `new_upload` URL is not accessible from the outside. This is to avoid unauthorized uploads - only your app backends, which take care of authorisation, should be able to access that URL. Similarly, you can shield your backend's "upload is finished" URL from accesses from the outside. One typical way of doing all of this is to set up your webserver or reverse proxy so that accesses "from the outside" to these URLs is forbidden. You can also set up your webserver to block *all* accesses to these URLs, and configure your web app backend and Incoming!! to communicate with each other directly. The example web apps in the source repository use this setup.
+
+
+Documentation
+-------------
+
+* System overview: motivation, design, sequence of an upload
+* Installation
+* Getting started - example web apps!
+    * The "simple" example web app
+    * Comprehensive view over most features in the "dynamic" example web app
+* Client API
+* Server API
+
+
+
+
+
 
 
 Running the examples
