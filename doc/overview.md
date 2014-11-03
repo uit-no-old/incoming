@@ -71,4 +71,4 @@ SEQ 7
 
 7. The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
 
-[fig-components]: figures/components.svg
+[fig-components]: figures/components.png
