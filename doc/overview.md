@@ -18,7 +18,7 @@ Incoming!! factors out large file uploads from your web app. It does this by run
 
 Here is an overview of the components of a typical web app that uses Incoming!!, with Incoming!! components being the slightly colored ones, and the rest being *your* components that you would also have without Incoming!!.
 
-![components](figures/components.svg)
+![components][fig-components]
 
 As in most web applications, the design is split into two distinct sides: the browser side (stuff running in your users' web browsers) and the server side (everything running on your servers or at your cloud provider).
 
@@ -70,3 +70,5 @@ SEQ 6
 SEQ 7
 
 7. The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
+
+[fig-components]: figures/components.svg
