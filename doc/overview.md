@@ -30,7 +30,7 @@ The browser and server side communicate with each other over the Internet using 
 
 The following picture shows the main data flows in the system, with arrow widths roughly indicating the amount of data we typically expect to flow through the system.
 
-PIC 2
+![data flows][fig-data_flows]
 
 Incoming!! does the heavy lifting, while your web app frontend and backend communicate with Incoming!! through thin APIs that don't exchange much data. Most importantly, your web app backend is relieved from handling large amounts of data at any point. It never needs to touch uploaded files directly. If your web app backend and the Incoming!! server run on different machines, your web app backend is also shielded from file upload traffic. Note though that the Incoming!! server and your web app backend both need access to your storage, which in the distributed case has to be accessible over the network. Typical storage systems for this would be simple filesystem network shares like CIFS or NFS (on a third machine) or a clustered storage system such as Ceph.
 
@@ -43,32 +43,40 @@ A large file upload with Incoming!!
 Suppose your web app backend wants to let a client upload a large file, for example by rendering and then sending a page with a file input field, or by answering a specific AJAX request by the client. This is the sequence in which the file upload with Incoming!! happens:
 
 
-SEQ 1
+![Upload sequence step 1][fig-seq1]
 
-1. your backend requests an upload ticket from Incoming!! using an HTTP request. In that request, your backend tells Incoming!! which URL to use to signal the upload's completion back to your backend (more on that in step 5). Incoming!!'s answer to the request contains the upload ticket ID.
+**1)** your backend requests an upload ticket from Incoming!! using an HTTP request. In that request, your backend tells Incoming!! which URL to use to signal the upload's completion back to your backend (more on that in step 5). Incoming!!'s answer to the request contains the upload ticket ID.
 
-SEQ 2
+![Upload sequence step 2][fig-seq2]
 
-2. your backend lets your frontend know the ticket ID for the file upload. How you implement this is up to you - you could for example render this into a page template that contains a file upload form, or implement it as an extra HTTP request if you want to allow your frontend to dynamically request upload tickets.
+**2)** your backend lets your frontend know the ticket ID for the file upload. How you implement this is up to you - you could for example render this into a page template that contains a file upload form, or implement it as an extra HTTP request if you want to allow your frontend to dynamically request upload tickets.
 
-SEQ 3
+![Upload sequence step 3][fig-seq3]
 
-3. your frontend sets up and starts the file upload using Incoming!!'s JavaScript library.
+**3)** your frontend sets up and starts the file upload using Incoming!!'s JavaScript library.
 
-SEQ 4
+![Upload sequence step 4][fig-seq4]
 
-4. The Incoming!! JavaScript library establishes a connection to the Incoming!! server and sends the file over, in many small chunks (a). The Incoming!! server assembles the file again and stores it into some data storage (currently, a file system) that is accessible from both Incoming!! server and your web app backend (b).
+**4)** The Incoming!! JavaScript library establishes a connection to the Incoming!! server and sends the file over, in many small chunks (a). The Incoming!! server assembles the file again and stores it into some data storage (currently, a file system) that is accessible from both Incoming!! server and your web app backend (b).
 
-SEQ 5
+![Upload sequence step 5][fig-seq5]
 
-5. Incoming!! sends an HTTP request to your backend to signal the upload's completion (a). Your backend can now do whatever it wants with that file, for example move it (b).
+**5)** Incoming!! sends an HTTP request to your backend to signal the upload's completion (a). Your backend can now do whatever it wants with that file, for example move it (b).
 
-SEQ 6
+![Upload sequence step 6][fig-seq6]
 
-6. optional: if your backend responds to Incoming!!'s request with "done", the upload is done and Incoming!! tells the frontend that it's done. However, your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the frontend can be informed about the upload being finished.
+**6)** optional: if your backend responds to Incoming!!'s request with "done", the upload is done and Incoming!! tells the frontend that it's done. However, your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the frontend can be informed about the upload being finished.
 
-SEQ 7
+![Upload sequence step 7][fig-seq7]
 
-7. The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
+**7)** The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
 
 [fig-components]: figures/components.png
+[fig-data_flows]: figures/data_flows.png
+[fig-seq1]: figures/seq1.png
+[fig-seq2]: figures/seq2.png
+[fig-seq3]: figures/seq3.png
+[fig-seq4]: figures/seq4.png
+[fig-seq5]: figures/seq5.png
+[fig-seq6]: figures/seq6.png
+[fig-seq7]: figures/seq7.png
