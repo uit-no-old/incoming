@@ -13,7 +13,9 @@ _uploads = {} # { id (str) : { "secret" : str, "filename" : str }}
 
 @get('/')
 def main_page() :
+    scheme = request.urlparts[0] # 'http' or 'https'
     return template("frontend_tmpl.html",
+            scheme=scheme,
             public_incoming_host=_config["public_incoming_host"],
             uploads=os.listdir("uploads"))
 

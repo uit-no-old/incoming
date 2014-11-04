@@ -30,7 +30,9 @@ def main_page() :
     upload_id = req.text
     _uploads[upload_id] = { "secret" : secret }
 
+    scheme = request.urlparts[0] # 'http' or 'https'
     return template("frontend_tmpl.html",
+            scheme=scheme,
             public_incoming_host=_config["public_incoming_host"],
             upload_id = upload_id,
             uploads=os.listdir("uploads"))

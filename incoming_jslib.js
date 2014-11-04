@@ -257,8 +257,15 @@ _incoming_lib = function() {
             ul.can_pause = false;
             ul.state_msg = "connecting to upload server";
 
-            // open websocket TODO make sure it's the same security as the whole page (encrypted or non-encrypted)
-            ws = new WebSocket('ws://' + server_hostname + '/incoming/frontend/upload_ws');
+            // figure out whether we want an encrypted ("wss:") or unencrypted ("ws:")
+            // WebSocket, depending on whether the browser got the page with HTTPS.
+            var ws_scheme = "wss"; // we default to encrypted
+            if (window.location.protocol == "http:") {
+                ws_scheme = "ws";
+            }
+
+            // open WebSocket
+            ws = new WebSocket(ws_scheme + '://' + server_hostname + '/incoming/frontend/upload_ws');
             //ws.binaryType = "arraybuffer"; // relevant only for recv? http://dev.w3.org/html5/websockets/#dom-websocket-binarytype
 
             ws.onopen = function onopen() {

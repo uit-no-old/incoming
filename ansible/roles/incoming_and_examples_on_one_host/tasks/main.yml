@@ -51,6 +51,24 @@
   remote_user: root
   template: src=sites-enabled/00_http_upgrade_magic dest=/root/docker_webserver_config/sites-enabled/00_http_upgrade_magic
 
+- name: do we have an SSL cert for the target host?
+  local_action: stat path="ssl-certs/{{ ansible_fqdn }}-nginx.pem"
+  sudo: false
+  register: stat_ssl_cert
+
+- name: have directory for dockerized nginx cert files
+  remote_user: root
+  file: path=/root/docker_webserver_config/certs state=directory
+  when: stat_ssl_cert.stat.exists
+
+- name: have SSL cert and key
+  remote_user: root
+  copy: src=ssl-certs/{{ item }} dest=/root/docker_webserver_config/certs/{{ item }}
+  with_items:
+      - "{{ ansible_fqdn }}-nginx.pem"
+      - "{{ ansible_fqdn }}.key"
+  when: stat_ssl_cert.stat.exists
+
 - name: have nginx server config for example app
   remote_user: root
   template: src=sites-enabled/example_apps dest=/root/docker_webserver_config/sites-enabled/example_app.conf
@@ -59,7 +77,7 @@
   remote_user: root
   docker: image="lars.tiede/incoming_example_webserver"
       name="incoming_example_webserver" state="running"
-      volumes="/root/docker_webserver_config/sites-enabled:/etc/nginx/sites-enabled,/var/log/nginx-docker:/var/log/nginx"
+      volumes="/root/docker_webserver_config/sites-enabled:/etc/nginx/sites-enabled,/root/docker_webserver_config/certs:/etc/nginx/certs,/var/log/nginx-docker:/var/log/nginx"
       ports="{{ nginx_server_port }}:80,{{ nginx_ssl_server_port }}:443"
       tty=yes
   register: container_webserver
