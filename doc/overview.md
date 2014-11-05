@@ -44,24 +44,24 @@ By the way, if your web app is supposed to serve or stream large files to your u
 A large file upload with Incoming!!
 -----------------------------------
 
-Suppose your web app backend wants to let a client upload a large file, for example by rendering and then sending a page with a file input field, or by answering a specific AJAX request by the client. This is the sequence in which the file upload with Incoming!! happens:
+Suppose your web app backend wants to let a client upload a large file, for example by rendering and then sending a page with a file input field, or by answering a specific AJAX request by the client (what exactly you do there is none of Incoming!!'s business). This is the sequence in which the file upload with Incoming!! happens:
 
 
 ![Upload sequence step 1][fig-seq1]
 
-**1)** your backend requests an upload ticket from Incoming!! using an HTTP request. In that request, your backend tells Incoming!! which URL to use to signal the upload's completion back to your backend (more on that in step 5). Incoming!!'s answer to the request contains the upload ticket ID.
+**1)** your backend requests an upload ticket from Incoming!! using an HTTP request. In that request, your backend tells Incoming!! which URL to use to signal the upload's completion back to your backend (more on that later in step 5). Incoming!!'s answer to the request contains the upload ticket ID.
 
 ![Upload sequence step 2][fig-seq2]
 
-**2)** your backend lets your frontend know the ticket ID for the file upload. How you implement this is up to you - you could for example render this into a page template that contains a file upload form, or implement it as an extra HTTP request if you want to allow your frontend to dynamically request upload tickets.
+**2)** your backend lets your frontend know the ticket ID for the file upload. How this happens exactly depends on your implementation: the ID could for example be rendered into a page template that contains a file upload form, or it could be the answer to an extra HTTP request if you allow your frontend to dynamically request upload tickets.
 
 ![Upload sequence step 3][fig-seq3]
 
-**3)** your frontend sets up and starts the file upload using Incoming!!'s JavaScript library.
+**3)** your frontend sets up and starts the file upload using Incoming!!'s JavaScript library. Specifically, you instantiate an Uploader object and call its start() method.
 
 ![Upload sequence step 4][fig-seq4]
 
-**4)** The Incoming!! JavaScript library establishes a connection to the Incoming!! server and sends the file over, in many small chunks (a). The Incoming!! server assembles the file again and stores it into some data storage (currently, a file system) that is accessible from both Incoming!! server and your web app backend (b).
+**4)** The Uploader object establishes a connection to the Incoming!! server and sends the file over, in many small chunks (a). The Incoming!! server assembles the file again and stores it into some data storage (currently, a file system) that is accessible from both Incoming!! server and your web app backend (b).
 
 ![Upload sequence step 5][fig-seq5]
 
@@ -69,7 +69,7 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 
 ![Upload sequence step 6][fig-seq6]
 
-**6)** optional: if your backend responds to Incoming!!'s request with "done", the upload is done and Incoming!! tells the frontend that it's done. However, your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the frontend can be informed about the upload being finished.
+**6)** your web app backend tells the Incoming!! server that it is finished retrieving the file. This can be done in two ways. Either your web app backend simply responds to Incoming!!'s request with "done". However, your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the upload is done.
 
 ![Upload sequence step 7][fig-seq7]
 
