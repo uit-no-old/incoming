@@ -39,7 +39,7 @@ Documentation
 -------------
 
 * [System overview: motivation, design, integration into your app](doc/overview.md)
-* Installation
+* [Installation](doc/installation.md)
 * Getting started - example web apps!
     * The "simple" example web app
     * Comprehensive view over most features in the "dynamic" example web app

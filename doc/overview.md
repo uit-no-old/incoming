@@ -76,7 +76,7 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 **7)** The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
 
 
-Integration into your app summary
+Integration into your app: summary
 ---------------------------------
 
 In order to use Incoming!!, your app needs to:
