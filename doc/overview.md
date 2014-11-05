@@ -75,6 +75,7 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 
 **7)** The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
 
+[fig-bad]: figures/bad.png
 [fig-components]: figures/components.png
 [fig-data_flows]: figures/data_flows.png
 [fig-seq1]: figures/seq1.png
