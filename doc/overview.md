@@ -6,7 +6,7 @@ Motivation
 
 Large file uploads in the browser should be trivial, but sadly aren't. Browsers and web apps / web servers alike still struggle with this. This is because HTTP has no built-in support for streamed uploads, Instead, files are uploaded as part of regular HTTP requests. Most webservers and web frameworks do not stream HTTP requests, but process them whole. This causes many problems with large file uploads on both client and server sides. For example, a webserver often caches the whole file that comes as part of an HTTP request before handing it, again whole, to the web app backend. This can take a lot of time and bogs down the web app backend when it receives and processes the contents of the file. Another problem is that a large file upload either succeeds or fails as a whole: if anything happens during the time the request is sent from the browser to the server, the whole file upload has failed and must be repeated as a whole. Yet another problem is that the application running in the browser usually doesn't know anything about the progress of an ongoing upload. All your web app frontend knows is that a request (for example a form submit) is going on that takes a very long time.
 
-In summary, this is **bad**:
+In summary, this is bad:
 
 ![bad][fig-bad]
 
@@ -74,6 +74,20 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 ![Upload sequence step 7][fig-seq7]
 
 **7)** The Incoming!! server tells the frontend that the upload is handed over to the application (a). In your frontend, a callback is called (b). Now both your backend and your frontend know that the upload is done.
+
+
+Integration into your app summary
+---------------------------------
+
+In order to use Incoming!!, your app needs to:
+
+* have logic in place between your backend and your frontend to give the frontend an upload ticket ID when a large file upload is in order. This could be done by rendering the ticket ID into a page template, or by doing it dynamically with an AJAX request.
+* (backend) request upload tickets from Incoming!! using an HTTP request.
+* (frontend) load the Incoming!! JavaScript library, and when an upload is in order, it instantiates an Uploader object and calls its start() method.
+* (backend) provide an HTTP route so that the Incoming!! server can tell it when the uploaded file has arrived. The answer to Incoming!!'s HTTP request tells Incoming!! that the file has been handed over to the app.
+* (frontend) provide a callback that is called when the upload and handover is finished.
+
+The example web apps we provide along with Incoming!!'s source code implement all of that.
 
 [fig-bad]: figures/bad.png
 [fig-components]: figures/components.png

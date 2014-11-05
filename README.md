@@ -38,7 +38,7 @@ When you set all of this up, you should make sure that Incoming!!'s `new_upload`
 Documentation
 -------------
 
-* [System overview: motivation, design, sequence of an upload](doc/overview.md)
+* [System overview: motivation, design, integration into your app](doc/overview.md)
 * Installation
 * Getting started - example web apps!
     * The "simple" example web app
