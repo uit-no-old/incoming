@@ -46,43 +46,7 @@ When you set all of this up, you should make sure that Incoming!!'s `new_upload`
 Documentation
 -------------
 
-* [System overview: motivation, design, integration into your app](doc/overview.md)
+* [System overview: motivation, design, integration eight-miles-up](doc/overview.md)
 * [Installation](doc/installation.md)
-* Getting started - example web apps!
-    * The "simple" example web app
-    * Comprehensive view over most features in the "dynamic" example web app
-* Client API
-* Server API
-
-
-
-
-
-
-
-Running the examples
---------------------
-
-Several eamples in the examples/ directory are provided that demonstrate how you can use Incoming!! in your web app. To get these up and running, you need python, pip, and a few dependencies. This is how you get them installed in a virtual environment:
-
-    $ cd examples
-    examples$ mkdir py-env
-    examples$ virtualenv py-env
-    examples$ source py-env/bin/activate
-    (py-env) examples$ pip install -r pip-req.txt
-
-Now you can run the example backends in whichever shell you have sourced py-env/bin/activate in.
-
-
-Integration into your web app
------------------------------
-
-See [doc/usage.md](doc/usage.md).
-
-
-Deployment centrally or as part of your web app
------------------------------------------------
-
-See doc/deployment.md
-
-TODO. Describe how to compile and install (maybe have binary available?). Describe how to set up nginx for accepting frontend URLs from anywhere, but backend URLs only internally. nginx setup different when used centrally or alongside app (i.e., can webserver config be tighter integrated with web app when incoming comes alongside it?)
+* [Example web apps using Incoming!!](doc/examples.md)
+* [Client and Server API](doc/api.md)

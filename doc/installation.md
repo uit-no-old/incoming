@@ -108,17 +108,38 @@ Optional: run the example web apps (manually)
 
 If you want to deploy and run everything including the examples automatically with Ansible, skip this section.
 
-You need Python 2 and pip. We recommend virtualenv (get it with "sudo pip install virtualenv"), but it's not necessary. In the following, we describe the install with virtualenv.
+The example web apps run on a machine that shares a filesystem with the Incoming!! server. The directory in which the Incoming!! server stores uploads must have the same name on both machines. The example app and Incoming!! server must also be able to talk to each other directly.
+
+On the machine you run the example app(s) on, you need Python 2 and pip. We recommend virtualenv (get it with "sudo pip install virtualenv"), but it's not necessary. In the following, we describe the install with virtualenv.
+
+    $ cd examples
+    examples$ mkdir py-env
+    examples$ virtualenv py-env
+    examples$ source py-env/bin/activate
+    (py-env) examples$ pip install -r pip-req.txt
+
+Now you can run the example backends in whichever shell you have sourced py-env/bin/activate in.
+
+Both backends are started the same way and accept the same command line parameters. There are parameters to specify the Incoming!! server hostname and port, the app hostname and port. Do the following to get an overview. Then you will know what to do.
+
+    (py-env) examples$ cd 1-simple
+    (py-env) 1-simple$ python backend.py --help
+
+When both the Incoming!! server and one of the web apps are running, point your browser to the host:port you have the example web app running on and start playing.
 
 
-Alternative: build and run everything automatically with Ansible
-----------------------------------------------------------------
+Alternative: build and run the whole example setup automatically with Ansible
+-----------------------------------------------------------------------------
 
 The Ansible playbook BLABLA automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having my work setup in mind. This is rude and will be changed to a Vagrant based setup. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed.
 
 EDIT INVENTORY
 
 EDIT PLAYBOOK TO SELECT WHICH EXAMPLE TO RUN
+
+ADD SSH KEYS IF YOU WANT SSH ACCESS
+
+ADD PRIVATE KEYS IF YOU WANT TO ACCESS CONTAINERS FROM THE CONTAINER HOST
 
 IF YOU HAVE SSL CERTS, PUT THEM IN THE RIGHT PLACE AND MAGIC WILL HAPPEN
 
