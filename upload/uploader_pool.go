@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"source.uit.no/lars.tiede/incoming/uidpool"
+	"source.uit.no/star-apt/incoming/uidpool"
 )
 
 type UploaderPool interface {

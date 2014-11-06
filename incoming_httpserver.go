@@ -41,7 +41,7 @@ import (
 	"bitbucket.org/kardianos/osext"
 	"github.com/gorilla/mux"
 
-	"source.uit.no/lars.tiede/incoming/upload"
+	"source.uit.no/star-apt/incoming/upload"
 )
 
 type appVarsT struct {

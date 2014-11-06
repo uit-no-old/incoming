@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"time"
 
-	"source.uit.no/lars.tiede/incoming/upload"
+	"source.uit.no/star-apt/incoming/upload"
 
 	"github.com/gorilla/websocket"
 )
