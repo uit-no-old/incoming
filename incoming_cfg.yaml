@@ -5,6 +5,11 @@ IncomingIP: 0.0.0.0
 # port incoming should listen on
 IncomingPort: 4000
 
+# for uploads to files: where should files be stored until the web app moves /
+# deletes them?
+# Relative paths are evaluated relative to current working directory
+StorageDir: '/var/incoming/uploads'
+
 # a file is split into many chunks which are uploaded in sequence...
 UploadChunkSizeKB: 512
 
@@ -23,11 +28,6 @@ UploadMaxIdleDurationS: 43200 # 12 hours
 # this must be smaller than the reconnect attempt interval in the javascript
 # library in ws.onclose (which is as of now set to 60 seconds)
 WebsocketConnectionTimeoutS: 58
-
-# for uploads to files: where should files be stored until the web app moves /
-# deletes them?
-# Relative paths are evaluated relative to current working directory
-StorageDir: '/var/incoming/uploads'
 
 # how long may the 'upload is finished' request to the app backend take before
 # the upload is assumed cancelled and the file deleted.
