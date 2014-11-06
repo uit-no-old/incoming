@@ -83,7 +83,7 @@ In order to use Incoming!!, your app needs to:
 
 * have logic in place between your backend and your frontend to give the frontend an upload ticket ID when a large file upload is in order. This could be done by rendering the ticket ID into a page template, or by doing it dynamically with an AJAX request.
 * (backend) request upload tickets from Incoming!! using an HTTP request.
-* (frontend) load the Incoming!! JavaScript library, and when an upload is in order, it instantiates an Uploader object and calls its start() method.
+* (frontend) load the Incoming!! JavaScript library, and when an upload is in order, instantiate an Uploader object and call its start() method.
 * (backend) provide an HTTP route so that the Incoming!! server can tell it when the uploaded file has arrived. The answer to Incoming!!'s HTTP request tells Incoming!! that the file has been handed over to the app.
 * (frontend) provide a callback that is called when the upload and handover is finished.
 

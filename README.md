@@ -12,8 +12,16 @@ The Incoming!! server is implemented in Go, and the JavaScript library in, well,
 At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide enough upload bandwidth. This use case is always in the back of our heads, but not fully implemented yet.
 
 
+Usage example
+-------------
+
+TODO the crucial bits from example 1, verbatim.
+
+
 Usage summary
 -------------
+
+TODO when the usage example is in place, do I still want this section (here)?
 
 Install the Incoming!! server alongside your web app, or centrally for your organization. With the Incoming!! server in place, you do the following in your web app backend to use it:
 
