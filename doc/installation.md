@@ -100,8 +100,6 @@ The Incoming!! server log is in /var/log/incoming.log inside the container. You 
 
 The Incoming!! server is stateless, so we recommend to just discard Docker containers after using them.
 
-Feel free to explore and hack the Ansible plays and roles. This is roughly what happens when an Incoming!! container is built automatically: first, the Incoming!! source files and some other stuff are copied over to the build host. Then, a Docker image is built there, using a [Dockerfile](../Dockerfile) we provide. During the build, Ansible is installed and executed *inside* the container (check [ansible/inside-docker.yml](../ansible/inside-docker.yml)). The inside-docker.yml playbook installs Go, builds the Incoming!! server, and installs your SSH keys. Then, the Docker image is exported into a tarball, which is downloaded to the Ansible control host, into the [ansible/docker\_images](../ansible/docker_images) directory.
-
 
 Optional: run the example web apps (manually)
 ---------------------------------------------
@@ -131,20 +129,33 @@ When both the Incoming!! server and one of the web apps are running, point your 
 Alternative: build and run the whole example setup automatically with Ansible
 -----------------------------------------------------------------------------
 
-The Ansible playbook [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml) automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having the author's work setup in mind. This is rude and will be changed to a Vagrant based setup that works anywhere. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed already.
+The Ansible playbook [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml) automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having the author's test setup in mind. This is of course rude and will be changed to a Vagrant based setup that works anywhere. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, you need to have Docker installed already on the machines you use for building and running the Docker containers.
 
-The first steps to build everything are the same as for building the Incoming!! server alone with Ansible (see above). You need to edit the inventory file and you might want to have a look at the Ansible config. There is only one difference to the above case when it comes to the inventory: in addition to the 'build' group, you also need a 'test' group, in which you place machines that should (each) run the whole combo of Incoming!! server, example web app, and reverse proxy. The machine(s) you put in that group can of course be the same machine as in the 'build' group.
+The first steps to build everything are the same as for building only the Incoming!! server with Ansible (see above). You need to edit the inventory file and you might want to have a look at the Ansible config. There is only one difference to the above case when it comes to the inventory: in addition to the 'build' group, you also need a 'test' group, in which you place machines that should (each) run the whole combo of Incoming!! server, example web app, and reverse proxy. The machine(s) you put in that group can of course be the same machine as in the 'build' group.
 
-There are two example web apps, but only one web app will be served when everything is built. You can configure which web app that will be in the playobook ([ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml)). in the play that runs on the 'test' hosts, edit the 'example\_port' variable that is passed to the 'incoming\_and\_examples\_on\_one\_host' role. Set that variable to 4001, and example web app 1 will be served. 4002 will serve example 2.
+
+### Configure the example setup
+
+You can configure the setup you are going to get by modifying the playbook and by adding files into certain directories before running the playbook. In the following, we highight the most likely things you might want to do.
+
+There are two example web apps, but only one web app will be served in our example setup. You can configure which web app that will be in the playobook ([ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml)). in the play that runs on the 'test' hosts, edit the 'example\_port' variable that is passed to the 'incoming\_and\_examples\_on\_one\_host' role. Set that variable to 4001, and example web app 1 will be served. 4002 will serve example 2.
 
 In the same playbook, you can also configure whether you want to be able to access the running containers with SSH from the outside or not. The 'incoming\_\[...\]\_port\_maps' variables set up these port mappings for the incoming and the example web apps containers, respectively.
 
-The containers do only permit SSH logins with key-based authentication, so you need to have your public keys installed in the containers. Just copy the public keys you want to have set up in the containers to the [ansible/authorized\_keys](../ansible/authorized\_keys) and/or the [examples/ansible/authorized\_keys](../examples/ansible/authorized\_keys) directories.
+The containers only permit SSH logins with key-based authentication, so you need to have your public keys installed in the containers. Just copy the public keys you want to have set up in the containers to the [ansible/authorized\_keys](../ansible/authorized\_keys) and/or the [examples/ansible/authorized\_keys](../examples/ansible/authorized\_keys) directories.
 
 If you don't want to be able to SSH directly into the containers from the outside (you probably don't want to be able to in a production setup later), you can still SSH into them, by going through the host on which the Docker containers run. You SSH to the host, and from there into the containers. To disable 'external' SSH logins, remove (empty) the port forwarding variables in the playbook. To be able to SSH 'internally' into the containers, you probably need a private key on the host, and corresponding public keys in the containers. Put private key file(s) into the [ansible/private\_keys](../ansible/private\_keys) and/or the [examples/ansible/private\_keys](../examples/ansible/private\_keys) directories.
 
 If you want an SSL enabled setup, just add SSL certificates to the [ansible/ssl-certs](../ansible/ssl-certs) directory, and your installation on the corresponding host will support HTTPS. In order for this to work, name your files like this: `<fqdn of host>-nginx.pem` for the certificate file (including possible intermediates), and `<fqdn of host>.key` for the key file. 'fqdn' means 'fully qualified domain name', for example 'my-example-installation.my-company.com'. Note: you might want to run `ansible <host> -m setup` and check the `ansible_fqdn` variable to make sure that Ansible figures out the fqdn correctly.
 
+
+### Notes on running the example setup
+
 To inspect running containers, log in to them using SSH. Incoming!! and example web apps write logs to /var/log/incoming\_example\_\[12\].log and /var/log/incoming in their respective containers.
 
 Note that if you stop and start either the Incoming!! or the web app example container manually, or if the Docker daemon is restarted for some reason, at least at the time of this writing the internal IP addresses of the containers change and the installation will break because the reverse proxy setup is suddenly wrong. This odd behavior might be fixed in Docker at some point. Until then, the easiest way to fix this problem is to just run the playbook again. (This is not a good solution for a production setup, but we're only doing examples here after all.)
+
+
+### Notes on hacking the setup
+
+Feel free to explore and hack the Ansible plays and roles. This is roughly what happens when an Incoming!! container is built automatically: first, the Incoming!! source files and some other stuff are copied over to the build host. Then, a Docker image is built there, using a [Dockerfile](../Dockerfile) we provide. During the build, Ansible is installed and executed *inside* the container (check [ansible/inside-docker.yml](../ansible/inside-docker.yml)). The inside-docker.yml playbook installs Go, builds the Incoming!! server, and installs your SSH keys. Then, the Docker image is exported into a tarball, which is downloaded to the Ansible control host, into the [ansible/docker\_images](../ansible/docker_images) directory.
