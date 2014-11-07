@@ -90,17 +90,17 @@ First you need to look at the inventory file in [ansible/inventory/default](../a
 
 Another thing you might want to have a look at is the Ansible config file we're using. It's in [ansible/ansible.cfg](../ansible/ansible.cfg). Note the "transport" option, which ties Ansible down to using SSH connections, not local ones, even for localhost.
 
-If you don't want to build Incoming!! *and* the example web apps and reverse proxy, you need to hack the Ansible playbook that makes it all (or copy it and modify the copy). This playbook is in [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml). Remove the role invocations for the examples and the example webserver from the 'build' play, and remove the 'test' play entirely. When you run the playbook now, you get a Docker image file stored into the [ansible/docker\_images](../ansible/docker_images) directory. That image can be loaded into a Docker daemon with `docker load`.
+Unless you want to build Incoming!! *and* the example web apps and reverse proxy (which is described further below), you need to hack the Ansible playbook that makes it all (or copy it and modify the copy). This playbook is in [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml). Remove the role invocations for the examples and the example webserver from the 'build' play, and remove the 'test' play entirely. When you run the playbook now, you get a Docker image file stored into the [ansible/docker\_images](../ansible/docker_images) directory. That image can be loaded into a Docker daemon with `docker load`.
 
 If you want SSH access to Incoming!! Docker containers, copy your public key(s) to the [ansible/authorized\_keys](../ansible/authorized_keys) directory before you run the playbook.
 
-Feel free to explore and hack the Ansible plays and roles. This is roughly what happens: first, the Incoming!! source files and some other stuff are copied over to the build host. Then, a Docker image is built using a [Dockerfile](../Dockerfile) we provide. During the build, Ansible is installed and executed *within* the container (check [ansible/inside-docker.yml](../ansible/inside-docker.yml)). The inside-docker.yml playbook installs Go, builds the Incoming!! server, and installs your SSH keys. Then, the Docker image is exported into a tarball, which is downloaded to the Ansible control host, into the [ansible/docker\_images](../ansible/docker_images) directory.
-
-In order to run the Incoming!! server, you need to load the Docker image into the Docker daemon on the machine you want to run the server on, and then just run it. Map port 4000, and optionally port 22. Map in a host directory to the container's /var/incoming directory, where uploaded files end up. If you want to see how we do that with Ansible, check the first few tasks in [ansible/roles/incoming\_and\_examples\_on\_one\_host/tasks/main.yml](../ansible/roles/incoming_and_examples_on_one_host/tasks/main.yml). Note that the setup there doesn't map in a host directory for /var/incoming but rather uses that volume from another Docker container on the same host that runs the exaple web app.
+In order to run the Incoming!! server, you need to load the Docker image into the Docker daemon on the machine you want to run the server on, and then just run it. Map port 4000, and optionally port 22. Map in a host directory to the container's /var/incoming directory, where uploaded files end up. If you want to see how we do that with Ansible, check the first few tasks in [ansible/roles/incoming\_and\_examples\_on\_one\_host/tasks/main.yml](../ansible/roles/incoming_and_examples_on_one_host/tasks/main.yml). Note that the setup there doesn't map in a host directory for /var/incoming but rather uses that volume from another Docker container running the example web app on the same host.
 
 The Incoming!! server log is in /var/log/incoming.log inside the container. You either have to SSH into the container to check the log, or you have to map in a host directory to /var/log when starting the container if you want to read the log without having to get into the container.
 
 The Incoming!! server is stateless, so we recommend to just discard Docker containers after using them.
+
+Feel free to explore and hack the Ansible plays and roles. This is roughly what happens when an Incoming!! container is built automatically: first, the Incoming!! source files and some other stuff are copied over to the build host. Then, a Docker image is built there, using a [Dockerfile](../Dockerfile) we provide. During the build, Ansible is installed and executed *inside* the container (check [ansible/inside-docker.yml](../ansible/inside-docker.yml)). The inside-docker.yml playbook installs Go, builds the Incoming!! server, and installs your SSH keys. Then, the Docker image is exported into a tarball, which is downloaded to the Ansible control host, into the [ansible/docker\_images](../ansible/docker_images) directory.
 
 
 Optional: run the example web apps (manually)
@@ -108,7 +108,7 @@ Optional: run the example web apps (manually)
 
 If you want to deploy and run everything including the examples automatically with Ansible, skip this section.
 
-The example web apps run on a machine that shares a filesystem with the Incoming!! server. The directory in which the Incoming!! server stores uploads must have the same name on both machines. The example app and Incoming!! server must also be able to talk to each other directly.
+The example web apps can run on a machine that shares a filesystem with the Incoming!! server. The directory in which the Incoming!! server stores uploads must have the same name on both machines. The example app and Incoming!! server must also be able to talk to each other directly. (All of this is given if you run both Incoming!! and examples on the same machine.)
 
 On the machine you run the example app(s) on, you need Python 2 and pip. We recommend virtualenv (get it with "sudo pip install virtualenv"), but it's not necessary. In the following, we describe the install with virtualenv.
 
@@ -120,7 +120,7 @@ On the machine you run the example app(s) on, you need Python 2 and pip. We reco
 
 Now you can run the example backends in whichever shell you have sourced py-env/bin/activate in.
 
-Both backends are started the same way and accept the same command line parameters. There are parameters to specify the Incoming!! server hostname and port, the app hostname and port. Do the following to get an overview. Then you will know what to do.
+Both backends are started the same way and accept the same command line parameters. There are parameters to specify the Incoming!! server hostname and port, and the app hostname and port. Do the following to get an overview. Then you will know what to do.
 
     (py-env) examples$ cd 1-simple
     (py-env) 1-simple$ python backend.py --help
@@ -131,7 +131,7 @@ When both the Incoming!! server and one of the web apps are running, point your 
 Alternative: build and run the whole example setup automatically with Ansible
 -----------------------------------------------------------------------------
 
-The Ansible playbook BLABLA automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having my work setup in mind. This is rude and will be changed to a Vagrant based setup. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed.
+The Ansible playbook [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml) automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having my work setup in mind. This is rude and will be changed to a Vagrant based setup that works anywhere. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed already.
 
 EDIT INVENTORY
 
