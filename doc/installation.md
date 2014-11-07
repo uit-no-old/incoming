@@ -11,7 +11,7 @@ Compile and install the Incoming!! server manually
 
 If you want to use Ansible right away, you may skip this section. We have Ansible goodies for you to compile and install Incoming!!.
 
-You need [Go](http://www.golang.org). If you don't have it installed, [install](http://golang.org/doc/install) it. Go's installation manual is a bit long, so here's how you install Go: on Ubuntu, "apt-get golang" will install the compiler and other stuff. Install mercurial and git as well so that Go can install dependencies automatically. Once you installed the packages, set up your "Go path" like this: `mkdir $HOME/go` and then `export GOPATH=$HOME/go`. You might want to put the latter in your `.profile`.
+In order to compile the Incoming!! server, you need [Go](http://www.golang.org). If you don't have it installed, [install](http://golang.org/doc/install) it. Go's installation manual is a bit long, so here's how you install Go: on Ubuntu, "apt-get golang" will install the compiler and other stuff. Install mercurial and git as well so that Go can install dependencies automatically. Once you installed the packages, set up your "Go path" like this: `mkdir $HOME/go` and then `export GOPATH=$HOME/go`. You might want to put the latter in your `.profile`.
 
 Now you can get and build Incoming!! like this:
 
@@ -131,16 +131,20 @@ When both the Incoming!! server and one of the web apps are running, point your 
 Alternative: build and run the whole example setup automatically with Ansible
 -----------------------------------------------------------------------------
 
-The Ansible playbook [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml) automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having my work setup in mind. This is rude and will be changed to a Vagrant based setup that works anywhere. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed already.
+The Ansible playbook [ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml) automates the building and running of an Incoming!! server, one of the two example web apps, and a reverse proxy. At present, it is written having the author's work setup in mind. This is rude and will be changed to a Vagrant based setup that works anywhere. But for now you will have to edit the supplied Ansible inventory file in order to run the playbook. Also, on the "build" machine, you need to have Docker installed already.
 
-EDIT INVENTORY
+The first steps to build everything are the same as for building the Incoming!! server alone with Ansible (see above). You need to edit the inventory file and you might want to have a look at the Ansible config. There is only one difference to the above case when it comes to the inventory: in addition to the 'build' group, you also need a 'test' group, in which you place machines that should (each) run the whole combo of Incoming!! server, example web app, and reverse proxy. The machine(s) you put in that group can of course be the same machine as in the 'build' group.
 
-EDIT PLAYBOOK TO SELECT WHICH EXAMPLE TO RUN
+There are two example web apps, but only one web app will be served when everything is built. You can configure which web app that will be in the playobook ([ansible/build\_and\_run\_incoming\_and\_examples.yml](../ansible/build_and_run_incoming_and_examples.yml)). in the play that runs on the 'test' hosts, edit the 'example\_port' variable that is passed to the 'incoming\_and\_examples\_on\_one\_host' role. Set that variable to 4001, and example web app 1 will be served. 4002 will serve example 2.
 
-ADD SSH KEYS IF YOU WANT SSH ACCESS
+In the same playbook, you can also configure whether you want to be able to access the running containers with SSH from the outside or not. The 'incoming\_\[...\]\_port\_maps' variables set up these port mappings for the incoming and the example web apps containers, respectively.
 
-ADD PRIVATE KEYS IF YOU WANT TO ACCESS CONTAINERS FROM THE CONTAINER HOST
+The containers do only permit SSH logins with key-based authentication, so you need to have your public keys installed in the containers. Just copy the public keys you want to have set up in the containers to the [ansible/authorized\_keys](../ansible/authorized\_keys) and/or the [examples/ansible/authorized\_keys](../examples/ansible/authorized\_keys) directories.
 
-IF YOU HAVE SSL CERTS, PUT THEM IN THE RIGHT PLACE AND MAGIC WILL HAPPEN
+If you don't want to be able to SSH directly into the containers from the outside (you probably don't want to be able to in a production setup later), you can still SSH into them, by going through the host on which the Docker containers run. You SSH to the host, and from there into the containers. To disable 'external' SSH logins, remove (empty) the port forwarding variables in the playbook. To be able to SSH 'internally' into the containers, you probably need a private key on the host, and corresponding public keys in the containers. Put private key file(s) into the [ansible/private\_keys](../ansible/private\_keys) and/or the [examples/ansible/private\_keys](../examples/ansible/private\_keys) directories.
 
-INSPECT CONTAINERS
+If you want an SSL enabled setup, just add SSL certificates to the [ansible/ssl-certs](../ansible/ssl-certs) directory, and your installation on the corresponding host will support HTTPS. In order for this to work, name your files like this: `<fqdn of host>-nginx.pem` for the certificate file (including possible intermediates), and `<fqdn of host>.key` for the key file. 'fqdn' means 'fully qualified domain name', for example 'my-example-installation.my-company.com'. Note: you might want to run `ansible <host> -m setup` and check the `ansible_fqdn` variable to make sure that Ansible figures out the fqdn correctly.
+
+To inspect running containers, log in to them using SSH. Incoming!! and example web apps write logs to /var/log/incoming\_example\_\[12\].log and /var/log/incoming in their respective containers.
+
+Note that if you stop and start either the Incoming!! or the web app example container manually, or if the Docker daemon is restarted for some reason, at least at the time of this writing the internal IP addresses of the containers change and the installation will break because the reverse proxy setup is suddenly wrong. This odd behavior might be fixed in Docker at some point. Until then, the easiest way to fix this problem is to just run the playbook again. (This is not a good solution for a production setup, but we're only doing examples here after all.)
