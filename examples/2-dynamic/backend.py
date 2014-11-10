@@ -1,4 +1,6 @@
 import sys
+import time
+import threading
 import os
 import socket
 import uuid
@@ -58,31 +60,49 @@ def retrieve_incoming_file() :
         print "upload_finished: wrong secret for upload id %s" % request.params["id"]
         return abort(418, "I shit you not: I am a teapot")
 
-    # If upload was successful and not cancelled, move uploaded file to
-    # destination path. Note that you need access to both paths, and that this
-    # operation should be quick (i.e., source and destination paths should be
-    # on the same volume).
+    # If upload was successful and not cancelled, start a thread that
+    # moves the uploaded file to its destination path, waits a bit, and then
+    # signals Incoming!! that the file is completely handed over. Notifying
+    # Incoming!! deferred like this (as opposed to example 1) is fine to
+    # take some time.
     ret = ""
     if request.params["cancelled"] != "yes" :
         incoming_path = request.params["filename"]
-        shutil.move(incoming_path, os.path.join("uploads", upload["filename"]))
-        ret = "done"
+        dest_path = os.path.join("uploads", upload["filename"])
+        answer_thread = threading.Thread(target=move_deferred,
+                args=(request.params["id"], incoming_path, dest_path, 10))
+        answer_thread.start()
+        return "wait"
     else :
         # we don't care. request.params["cancelReason"] contains a text describing
-        # why the upload cancelled. It also doesn't matter what we answer.
-        ret = ""
+        # why the upload was cancelled. It also doesn't matter what we answer.
+        print "Upload %s was cancelled: %s" % (request.params["id"],
+            request.params["cancelReason"])
+        del _uploads[request.params["id"]]
+        return ""
 
-    # Another parameter we get in the request is "filenameFromBrowser". This contains
-    # the name (not path) of the file as the browser saw it. In this example app, we
-    # already got this in request_upload, so we don't care about this here.
 
-    del _uploads[request.params["id"]]
-    return ret # we can return "done" or "wait" here. If "done", then for incoming
-               # the upload is history now. If "wait", then incoming will wait until
-               # we access POST /incoming/backend/finish_upload
-   # What happens now (in case of success): the incoming!! backend will signal
-   # the frontend that the upload is done. Through a JS callback, your frontend
-   # will be able to know as well.
+def move_deferred(upload_id, source_path, dest_path, delay_min_s) :
+    # move file, then perhaps wait until delay_min_s seconds have passed since
+    # invocation
+    ts_start = time.time()
+    shutil.move(source_path, dest_path)
+    sleep_for = delay_min_s - (time.time() - ts_start)
+    if sleep_for > 0 :
+        time.sleep(sleep_for)
+
+    # now tell the Incoming!! server that we are done
+    req_params = { "id" : upload_id }
+    req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
+        params = req_params)
+
+    # we get either "ok" or an error message as an answer
+    if req.text != "ok" :
+        print "Incoming!! error on finish (doesn't matter): %d %s" % (req.status_code, req.text)
+
+    # Finally, remove upload from our hash table. This probably isn't thread
+    # safe! Good that this is only an example ;)
+    del _uploads[upload_id]
 
 
 @get('/uploads/<filename:path>')
