@@ -37,7 +37,7 @@ function upload_file(upload_id, f) {
     };
 
     // initialize uploader
-    uploader = incoming.Uploader(upload_id, f);
+    var uploader = incoming.Uploader(upload_id, f);
     uploader.onprogress = update;
     uploader.onfinished = finished;
 
