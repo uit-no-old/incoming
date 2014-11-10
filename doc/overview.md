@@ -77,7 +77,7 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 
 
 Integration into your app: summary
----------------------------------
+----------------------------------
 
 In order to use Incoming!!, your app needs to:
 

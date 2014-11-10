@@ -125,7 +125,7 @@ window.onload = function() {
 };
 ```
 
-We also configre the Incoming!! JavaScript library and tell it where to find the Incoming!! server. This is sadly necessary because in JavaScript code running in a browser, there is currently no way to find out from which host a JavaScript file was loaded. So if the host of the example web app and the host of the Incoming!! server are different (which might very well be, even if you use reverse proxies and load balancers and whathaveyou), the Incoming!! JavaScript library doesn't know where the server is unless we specifically tell it. Therefore this annoying line is necessary.
+We also configure the Incoming!! JavaScript library and tell it where to find the Incoming!! server. This is sadly necessary because in JavaScript code running in a browser, there is currently no way to find out from which host a JavaScript file was loaded. So if the host of the example web app and the host of the Incoming!! server are different (which might very well be, even if you use reverse proxies and load balancers and whathaveyou), the Incoming!! JavaScript library doesn't know where the Incoming!! server is unless we specifically tell it. Therefore this annoying line is necessary.
 
 Then, the upload function. It is called from further down, when the user selects a file:
 
@@ -133,7 +133,7 @@ Then, the upload function. It is called from further down, when the user selects
 <input type="file" id="input_file" onchange="upload_file('{{ upload_id }}', this.files[0])"/>
 ```
 
-The template substitution of 'upload\_id' will render the ticket upload id directly into the HTML code, so when the onchange() callback is triggered, upload\_file() is called with the upload id the backend acquired from the Incoming!! server.
+The template substitution of 'upload\_id' renders the ticket upload id directly into the HTML code, so when the onchange() callback is triggered, upload\_file() is called with the upload id the backend acquired from the Incoming!! server.
 
 The upload\_file function sets up the file upload and starts it. It receives the (textual) upload id and a [File](https://developer.mozilla.org/en/docs/Web/API/File) object as parameters:
 
@@ -186,6 +186,76 @@ That's basically it. The rest of the template is what little HTML we need: file 
 
 
 ## Example 2: dynamic ticket acquisition, and using most of Incoming!!'s features
+
+The second example app expands on example 1 by using more of Incoming!!'s features (pause / resume / cancel, secret backend cookie, deferred upload finish notification to Incoming!! server), and by doing more detailed inspection of the Uploader object during upload. It also demonstrates how upload tickets can be acquired dynamically from the frontend, hinting at concurrent uploads and how dynamic web apps could use Incoming!!.
+
+The second example web app is in the [examples/2-dynamic](examples/2-dynamic) directory. Again, there are two files: [backend.py](examples/2-dynamic/backend.py) and [frontend\_tmpl.html](examples/2-dynamic/frontend_tmpl.html).
+
+
+### More detailed inspection of an Uploader object
+
+This is a very simple expansion of example 1's progress reporting, although it introduces quite a bit of code in the frontend. There are a bunch of HTML elements now for the output of numerous properties of the Uploader object. They are all updated in the 'update' callback, which is now much longer:
+
+```javascript
+    // uploader callback for updating all the HTML things
+    var update = function(uploader) {
+        output_state_msg.innerHTML = uploader.state_msg;
+        output_progress_bar.value = uploader.frac_complete;
+        output_error_msg.innerHTML = uploader.error_msg;
+        output_cancel_msg.innerHTML = uploader.cancel_msg;
+        output_connected.innerHTML = uploader.connected.toString();
+        output_cancelling.innerHTML = uploader.cancelling.toString();
+        output_cancelled.innerHTML = uploader.cancelled.toString();
+        output_finished.innerHTML = uploader.finished.toString();
+        output_chunks_tx.innerHTML = uploader.chunks_tx_now.toString();
+        output_chunks_acked.innerHTML = uploader.chunks_acked_now.toString();
+        output_chunks_ahead.innerHTML = uploader.chunks_ahead.toString();
+        output_kb_tx.innerHTML = Math.round(uploader.bytes_tx / 1024);
+        output_kb_acked.innerHTML = Math.round(uploader.bytes_acked / 1024);
+        output_kb_ahead.innerHTML = Math.round((uploader.bytes_tx - uploader.bytes_acked) / 1024);
+
+        input_file_select.disabled = !(uploader.cancelled || uploader.finished);
+        input_pause.disabled = !uploader.can_pause;
+        input_pause.checked = uploader.paused;
+        input_btn_cancel.disabled = !uploader.can_cancel;
+    };
+```
+
+The uploader object contains a bunch of properties you can use, incuding textual state and error messages, boolean states and flags (connected, can\_pause, paused, can\_cancel, cancelling, cancelled, finished), and numerical properties (frac\_complete, chunks / bytes transferred, chunks / bytes acknowledged, chunks / bytes "ahead"). The difference between "transferred" and "acknowledged" is that transferred chunks have beend sent to the server (i.e., send() has been called) but they might still reside in some buffer or be on their way, while acknowledged chunks have been acknowledged by the Incoming!! server with an "ack" message, so they have arrived at the Incoming!! server. The "\*\_ahead" properties indicate how many chunks / bytes have been sent, but not yet acknowledged. frac\_complete takes only acknowledged bytes into account, bytes that have been sent but not yet acknowledged don't count as "completed".
+
+'chunks\_tx' and 'chunks\_acked' are only counted for the current connection, i.e., when the connection is lost and re-established, the count of transferred chunks starts again at 0. This is to avoid confusion if the server decides to change the chunk size between connections. Also, the server doesn't count the number of transferred chunks, so if the connection is lost because the browser window is closed, there is no way for the uploader to know on a reconnect how many chunks have been uploaded so far. The number of chunks is not very significant anyway.
+
+Depending on the state of the upload, the callback enables or disables HTML inputs for file selection, pause, and cancel.
+
+In addition to Uploader.onprogress and Uploader.onfinish, there are two more callbacks you can set: oncancelled and onerror. Note that onprogress is always called by Incoming!! no matter which observable property has changed, so you won't miss a cancellation or finish if all you define is an onprogress handler.
+
+
+### Upload pause / resume / cancel
+
+The frontend in example 2 lets the user pause / resume and cancel an upload. For this, there are additional HTML elements right beneath the file selector, and the 'progress update' callback (see above) dynamically enables or disables the control based on whether pause or cancel are possible. There are also event handlers for clicks on the controls:
+
+```javascript
+    // click handler for cancel button
+    input_btn_cancel.onclick = function cancel_clicked() {
+        uploader.cancel("user cancelled manually");
+    };
+
+    // click handler for pause checkbox
+    input_pause.onclick = function pause_clicked() {
+        if (input_pause.checked) {
+            uploader.pause("pause");
+        } else {
+            uploader.pause("unpause");
+        }
+    };
+```
+
+Uploader.cancel() takes one argument, a cancellation message. Uploader.pause() takes one argument which is either "pause", "unpause", or "toggle".
+
+
+### Dynamic upload ticket acquisition
+
+
 
 TODO that snippet below is from the old example 1, before simplifying it even more
 
