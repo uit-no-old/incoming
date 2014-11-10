@@ -590,7 +590,11 @@ func (u *UploadToLocalFile) CleanUp() (err error) {
 	if u.removeFileWhenFinished && u.state != StateCancelled {
 		err = os.Remove(u.path)
 		if err != nil {
-			log.Printf("could not remove %s during cleanup", u.path)
+			if os.IsNotExist(err) {
+				log.Printf("wanted to remove %s but it was already gone", u.path)
+			} else {
+				log.Printf("could not remove %s during cleanup!", u.path)
+			}
 		}
 	}
 
