@@ -19,7 +19,8 @@ def main_page() :
                 _config["internal_app_host"],
             "removeFileWhenFinished" : "false" # we do this ourselves, by moving the file
             }
-    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
+    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"],
+            params=req_params)
 
     # if status code is OK, the request returns the upload id in the return
     # body. If the status code is an error code, the body contains an error
@@ -56,7 +57,9 @@ def retrieve_incoming_file() :
         ret = "done"
     else :
         # we don't care. request.params["cancelReason"] contains a text describing
-        # why the upload cancelled. It also doesn't matter what we answer.
+        # why the upload was cancelled. It also doesn't matter what we answer.
+        print "Upload %s was cancelled: %s" % (request.params["id"],
+            request.params["cancelReason"])
         ret = ""
 
     del _uploads[request.params["id"]]
