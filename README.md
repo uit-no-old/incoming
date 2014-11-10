@@ -51,7 +51,7 @@ def retrieve_incoming_file() :
     return "done"
 ```
 
-After you return "done" to that request, the Incoming!! server will notify your frontend that the upload is all done. Then both your backend and your frontend know that the upload is finished.
+After you return "done", the Incoming!! server will notify your frontend that the upload is all done. Then both your backend and your frontend know that the upload is finished.
 
 Speaking of your frontend, here's what you need there. First, you need to load the Incoming!! JavaScript library:
 
@@ -89,6 +89,8 @@ function upload_file(upload_id, f) {
 ```
 
 When `uploader.start()` is called, Incoming!! will do its thing. When everything is done, that is, when the file has been uploaded and handed over to your web app backend, your "upload is finished" callback is called. Then you know that your app has gotten the file.
+
+This is basically it. We ship two example web apps that serve as more real world code examples, handling errors and covering more of Incoming!!'s features. In most usage scenarios there is also the webserver / reverse proxy config to take care of. For that, we also document and ship an example.
 
 
 Usage summary
