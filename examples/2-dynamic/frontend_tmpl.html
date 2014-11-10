@@ -5,7 +5,8 @@
 
 window.onload = function() {
     // make sure that the incoming lib has loaded. This might not be the case
-    // if some browser add-on has blocked it.
+    // if some browser add-on has blocked it, or if incoming.js could not be
+    // downloaded from the Incoming!! server for some reason.
     if (typeof incoming === 'undefined') {
         var output_state_msg = document.getElementById("stats_state_msg");
         output_state_msg.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
