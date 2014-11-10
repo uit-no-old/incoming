@@ -15,7 +15,7 @@ At the present stage of development, Incoming!! can already be deployed together
 Usage example
 -------------
 
-Simple backend code in Python can look like the following.
+Simple backend code in Python (using the simple [Bottle](http://bottlepy.org/) web framework) can look like the following.
 
 Request an upload ticket from the Incoming!! server like this (using the excellent and simple [Requests](http://python-requests.org) library):
 
@@ -27,14 +27,14 @@ req = requests.post("http://INCOMING_HOSTNAME/incoming/backend/new_upload",
 
 In the request for a ticket, you tell the Incoming!! server which URL to POST to later when the upload is finished.
 
-The request returns the upload ticket ID, which you somehow give to your frontend. For example, if you are just answering a request for a file upload page, you could just render the upload ticket ID into a template.
+The request returns the upload ticket ID, which you somehow give to your frontend. For example, if you are just answering a request for a file upload page, you could simply render the upload ticket ID into a template.
 
 ```python
 upload_id = req.text
 return template("upload_page_template.html", upload_id = upload_id)
 ```
 
-Later, when the upload is finished, the Incoming!! server will POST to the URL your specified above. You get the path of the uploaded filename and you can move the file to its destination. So in your backend you need a handler for that:
+Later, when the upload is finished, the Incoming!! server will POST to the URL your specified above. In that request, you get the path of the uploaded filename so you can move the file to its destination. So in your backend you need a handler for that:
 
 ```python
 @post('/api/backend/upload_finished')
@@ -65,7 +65,7 @@ Then, you need some sort of file input, for example a file input field. You can 
 <input type="file" id="input_file" onchange="upload_file('{{ upload_id }}', this.files[0])"/>
 ```
 
-Here, we have rendered in the upload ticket id in the backend. You could of course obtain one in ither ways, for example with an extra bit of JavaScript that does an HTTP request to your backend (one of our example apps does that).
+Here, we have rendered in the upload ticket id in the backend. You could of course obtain one in other ways, for example with an extra bit of JavaScript that does an HTTP request to your backend (one of our example apps does that).
 
 The event handler can then configure and start an upload like this:
 
@@ -82,7 +82,7 @@ function upload_file(upload_id, f) {
     };
 
     // initialize and start uploader
-    uploader = incoming.Uploader(upload_id, f);
+    var uploader = incoming.Uploader(upload_id, f);
     uploader.onfinished = finished;
     uploader.start();
 }
