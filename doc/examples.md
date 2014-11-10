@@ -221,9 +221,9 @@ This is a very simple expansion of example 1's progress reporting, although it i
     };
 ```
 
-The uploader object contains a bunch of properties you can use, incuding textual state and error messages, boolean states and flags (connected, can\_pause, paused, can\_cancel, cancelling, cancelled, finished), and numerical properties (frac\_complete, chunks / bytes transferred, chunks / bytes acknowledged, chunks / bytes "ahead"). The difference between "transferred" and "acknowledged" is that transferred chunks have beend sent to the server (i.e., send() has been called) but they might still reside in some buffer or be on their way, while acknowledged chunks have been acknowledged by the Incoming!! server with an "ack" message, so they have arrived at the Incoming!! server. The "\*\_ahead" properties indicate how many chunks / bytes have been sent, but not yet acknowledged. frac\_complete takes only acknowledged bytes into account, bytes that have been sent but not yet acknowledged don't count as "completed".
+The uploader object contains a bunch of properties you can use, including textual state and error messages (state\_msg, error\_msg, cancel\_msg), boolean states and flags (connected, can\_pause, paused, can\_cancel, cancelling, cancelled, finished), and numerical properties (frac\_complete, chunks / bytes transferred, chunks / bytes acknowledged, chunks / bytes "ahead"). The difference between "transferred" and "acknowledged" is that transferred chunks have beend sent to the server (i.e., send() has been called) but they might still reside in some buffer or be on their way, while acknowledged chunks have been acknowledged by the Incoming!! server with an "ack" message, so they have arrived at the Incoming!! server. The "\*\_ahead" properties indicate how many chunks / bytes have been sent, but not yet acknowledged. frac\_complete takes only acknowledged bytes into account, bytes that have been sent but not yet acknowledged don't count as "completed".
 
-'chunks\_tx' and 'chunks\_acked' are only counted for the current connection, i.e., when the connection is lost and re-established, the count of transferred chunks starts again at 0. This is to avoid confusion if the server decides to change the chunk size between connections. Also, the server doesn't count the number of transferred chunks, so if the connection is lost because the browser window is closed, there is no way for the uploader to know on a reconnect how many chunks have been uploaded so far. The number of chunks is not very significant anyway.
+'chunks\_tx' and 'chunks\_acked' are only counted for the current connection, i.e., when the connection is lost and re-established, the count of transferred chunks starts again at 0. This is to avoid confusion if the server decides to change the chunk size between connections. Also, the server doesn't count the number of transferred chunks, so if the connection is lost because the browser window is closed, there is no way for the uploader to know on a reconnect how many chunks have been uploaded so far. For progress reporting, the number of transferred / acked bytes should be preferred.
 
 Depending on the state of the upload, the callback enables or disables HTML inputs for file selection, pause, and cancel.
 
@@ -232,7 +232,7 @@ In addition to Uploader.onprogress and Uploader.onfinish, there are two more cal
 
 ### Upload pause / resume / cancel
 
-The frontend in example 2 lets the user pause / resume and cancel an upload. For this, there are additional HTML elements right beneath the file selector, and the 'progress update' callback (see above) dynamically enables or disables the control based on whether pause or cancel are possible. There are also event handlers for clicks on the controls:
+The frontend in example 2 lets the user pause / resume and cancel an upload. For this, there are additional HTML elements right beneath the file selector, and the 'progress update' callback (see above) dynamically enables or disables the controls based on whether pause or cancel are possible. There are also event handlers for clicks on the controls:
 
 ```javascript
     // click handler for cancel button
@@ -255,43 +255,120 @@ Uploader.cancel() takes one argument, a cancellation message. Uploader.pause() t
 
 ### Dynamic upload ticket acquisition
 
+Instead of acquiring an upload ticket on access to the app page, example 2 can acquire upload tickets dynamically using JavaScript HTTP requests. As a consequence, upload ticked ids are no longer "hardcoded" in the HTML page, and therefore our upload\_file function no longer accepts an upload id, but only a File object - the file to upload.
 
+```javascript
+function upload_file(f) {
+```
 
-TODO that snippet below is from the old example 1, before simplifying it even more
+upload\_file now can't just initialize an Uploader object because it doesn't have an upload ticket yet. Instead, upload\_file does an XMLHttpRequest to the app backend, requesting an upload ticket id, and does the Uploader init/start when that request returns. In vanilla JavaScript, that looks like this:
+
+```javascript
+    // get an upload id from "my" backend (not incoming!! directly).
+    // When we got the id, we start uploading.
+    //
+    // HTTP requests are not pretty in vanilla JavaScript, but we do it here to
+    // avoid using any particular JS framework.
+    var upload_id = "";
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', "/api/frontend/request_upload?filename=" + f.name);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                upload_id = xhr.responseText;
+
+                // when we got our id, we can start uploading
+                uploader = incoming.Uploader(upload_id, f);
+                uploader.onprogress = update;
+                uploader.onfinished = finished;
+                uploader.oncancelled = update; // could do something better here
+                uploader.onerror = update; // could do something better here
+                uploader.start();
+
+            } else {
+                alert(xhr.responseText);
+            }
+        }
+    };
+    xhr.send(null);
+```
+
+In an actual web app, you likely use some JavaScriptframework that lets you do HTTP requests much nicer than that. In any case, the mechanism is this: request upload ticket from backend, and when that arrives, initialize and start an Uploader.
+
+You could easily run several concurrent uploads this way (one Uploader object per upload), but to keep it simple, our example web app frontend only allows the user to upload several files sequentially.
+
+The web app backend supports dynamic upload ticket acquisition by providing an HTTP route for the XMLHttpRequest that the frontend issues:
 
 ```python
-@get('/')
-def main_page() :
-    # get an upload ticket from Incoming!!
+@get('/api/frontend/request_upload')
+def request_upload() :
+```
+
+In it, the backend does most of what it did before in the handler for '/', which is now much shorter. It requests an upload ticket from Incoming!!, and the answer to that request contains the upload ticket ID, which is returned to the frontend.
+
+
+### "Secret backend cookie"
+
+To keep not the middle man but at least the vandals out (the middle man can in a production setup be dealt with using SSL), example 2's backend sends a "secret" to the Incoming!! server when it requests an upload ticket:
+
+```python
     secret = str(uuid.uuid4())
+
+    # get an upload ticket from Incoming!!
     req_params = { "destType" : "file",
             "signalFinishURL" : "http://%s/api/backend/upload_finished" % _config["internal_app_host"],
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
             "signalFinishSecret" : secret,
             }
     req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
+
 ```
 
-The POST request goes to the Incoming!! server (whose host:port we know from the command line) and specifies a few parameters:
-
-* 'destType': destination type - file or some other sort of storage object. At present, only 'file' is supported, but we will probably add support for storage systems such as Ceph in the future.
-* 'signalFinishURL': URL the Incoming!! server should POST to when the file has arrived.
-* 'removeFileWhenFinished': should the Incoming!! server, when all is done, remove the file or not? In this example, the backend moves the file in the filesystem, so the Incoming!! server should not (try to) remove the uploaded file.
-* 'signalFinishSecret': you can protect the 'signalFinishURL' from bogus accesses a bit by specifying a string here which the Incoming!! server will send back when accessing the URL later. This won't stop the man in the middle, but if you run Incoming!! server and web app on one host or if you use SSL between the two, this is useful.
-
-requests.post() is synchronous and returns when the request has been answered. So the next thing to do is to assert that we got a good answer, and to get our upload ticket from it:
+This 'secret' is later given back by the Incoming!! server when it notifies example 2's backend that the uploaded file has arrived. You can use it to verify that the request was not a bogus request from some vandal, but that it actually came from Incoming!!:
 
 ```python
-    # if status code is OK, the request returns the upload id in the return
-    # body. If the status code is an error code, the body contains an error
-    # message.
-    if req.status_code != requests.codes.ok :
-        return abort(500, "incoming!! error: %d %s" % (req.status_code, req.text))
-    upload_id = req.text
-    _uploads[upload_id] = { "secret" : secret }
+@post('/api/backend/upload_finished')
+def retrieve_incoming_file() :
+    upload = _uploads.get(request.params["id"], None)
+
+    if request.params["secret"] != upload["secret"] :
+        print "upload_finished: wrong secret for upload id %s" % request.params["id"]
+        return abort(418, "I shit you not: I am a teapot")
 ```
 
+This is a quite unlikely attack vector, so we are not sure whether we keep this feature in.
 
-TODO move this to ex 2.
-If the backend needs some time to process the file before the upload can be considered finished, for example if the file has to be moved to a different filesystem (we don't recommend this at all, but as a matter of fact our automated example setup will do just that), the request can also be answered with "wait", and then Incoming!!'s `POST /incoming/backend/finish_upload` be accessed later.
 
+### Deferred "got it" notification to Incoming!! server
+
+When the Incoming!! server notified example 1 that the upload had arrived, example 1 would move the file and then answer that request with "done". This is okay if it doesn't take much time to move the file (max a few seconds). If processing the file takes any longer, the web app backend should instead answer the request with "wait", and then after processing is done, access Incoming!!'s POST /incoming/backend/finish\_upload. This is what example 2 does (even though it doesn't do or delegate any processing on the file).
+
+Instead of moving the file in the 'upload\_finished' request handler, example 2 starts a new thread which does just that, and answers "wait":
+
+```python
+        incoming_path = request.params["filename"]
+        dest_path = os.path.join("uploads", upload["filename"])
+        answer_thread = threading.Thread(target=move_deferred,
+                args=(request.params["id"], incoming_path, dest_path, 10))
+        answer_thread.start()
+        return "wait"
+```
+
+The 'move\_deferred' function then runs in an own thread. It moves the file, then waits until a given time has passed, and finally sends the deferred 'got it' to the Incoming!! server.
+
+```python
+    ts_start = time.time()
+    shutil.move(source_path, dest_path)
+    sleep_for = delay_min_s - (time.time() - ts_start)
+    if sleep_for > 0 :
+        time.sleep(sleep_for)
+
+    # now tell the Incoming!! server that we are done
+    req_params = { "id" : upload_id }
+    req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
+        params = req_params)
+```
+
+The Incoming!! server will deem the upload successfully handed over as soon as it gets the request to finish\_upload. It will then also notify the frontend that the upload is finished.
+
+Note that the way example 2 does it is bad design. You should not use start Python threads in Bottle requests unless your app doesn't need to scale. We just did it this way here to demonstrate the mechanism.
