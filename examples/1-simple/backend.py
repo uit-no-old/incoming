@@ -9,16 +9,15 @@ from bottle import get, post, request, run, template, static_file, abort
 
 _hostname = socket.getfqdn()
 _config = {}
-_uploads = {} # { id (str) : { "secret" : str }}
+_uploads = {} # { id (str) }
 
 @get('/')
 def main_page() :
     # get an upload ticket from Incoming!!
-    secret = str(uuid.uuid4())
-    req_params = { "destType" : "file",
-            "signalFinishURL" : "http://%s/api/backend/upload_finished" % _config["internal_app_host"],
-            "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
-            "signalFinishSecret" : secret,
+    req_params = {
+            "signalFinishURL" : "http://%s/api/backend/upload_finished" % 
+                _config["internal_app_host"],
+            "removeFileWhenFinished" : "false" # we do this ourselves, by moving the file
             }
     req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 
@@ -28,7 +27,7 @@ def main_page() :
     if req.status_code != requests.codes.ok :
         return abort(500, "incoming!! error: %d %s" % (req.status_code, req.text))
     upload_id = req.text
-    _uploads[upload_id] = { "secret" : secret }
+    _uploads[upload_id] = True # all we need is the key
 
     scheme = request.urlparts[0] # 'http' or 'https'
     return template("frontend_tmpl.html",
@@ -42,12 +41,9 @@ def retrieve_incoming_file() :
     # if you have a webserver / reverse proxy in front of your web app, you
     # might want to make it block external access to URLs starting with
     # /backend
-    # In any case, we check the secret we gave to Incoming!! earlier.
-    upload = _uploads[request.params["id"]]
-
-    if request.params["secret"] != upload["secret"] :
-        print "upload_finished: wrong secret for upload id %s" % request.params["id"]
-        return abort(418, "I shit you not: I am a teapot")
+    upload = _uploads.get(request.params["id"], None)
+    if upload == None :
+        return abort(404, "There's no upload with that ID")
 
     # If upload was successful and not cancelled, move uploaded file to
     # destination path. Note that you need access to both paths, and that this

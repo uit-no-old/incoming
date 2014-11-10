@@ -50,7 +50,9 @@ def retrieve_incoming_file() :
     # might want to make it block external access to URLs starting with
     # /backend
     # In any case, we can check the secret we gave to Incoming!! earlier.
-    upload = _uploads[request.params["id"]]
+    upload = _uploads.get(request.params["id"], None)
+    if upload == None :
+        return abort(404, "There's no upload with that ID")
 
     if request.params["secret"] != upload["secret"] :
         print "upload_finished: wrong secret for upload id %s" % request.params["id"]

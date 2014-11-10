@@ -57,28 +57,37 @@ an upload, and makes an Uploader for it. It responds with the uploader's id
 */
 func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("got new upload request")
+
 	// read upload parameters from request
-	destType := r.FormValue("destType")
+
+	// upload to file or... (nothing else supported yet)
+	destType := r.FormValue("destType") // 'file' or nothing. Default: file
 	if destType == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "destType not given")
-		return
+		destType = "file"
 	}
+
+	// which URL to POST to when file is here
 	signalFinishURL, err := url.ParseRequestURI(r.FormValue("signalFinishURL"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "signalFinishURL invalid: %s", err.Error())
 		return
 	}
-	removeFileWhenFinished, err := strconv.ParseBool(
-		r.FormValue("removeFileWhenFinished"))
+
+	// should we remove the file when it's all over or not?
+	removeFileWhenFinishedStr := r.FormValue("removeFileWhenFinished")
+	if removeFileWhenFinishedStr == "" { // true or false. Default: true
+		removeFileWhenFinishedStr = "true"
+	}
+	removeFileWhenFinished, err := strconv.ParseBool(removeFileWhenFinishedStr)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "removeFileWhenFinished invalid: %s", err.Error())
 		return
 	}
-	signalFinishSecret := r.FormValue("signalFinishSecret")
-	// signalFinishSecret is optional, so it's fine when it's empty
+
+	// secret cookie to POST to finish URL later
+	signalFinishSecret := r.FormValue("signalFinishSecret") // optional
 
 	// make (and pool) new uploader
 	storageDirAbsolute, _ := filepath.Abs(appVars.config.StorageDir)
