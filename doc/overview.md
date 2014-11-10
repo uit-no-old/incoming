@@ -44,7 +44,7 @@ By the way, if your web app is supposed to serve or stream large files to your u
 A large file upload with Incoming!!
 -----------------------------------
 
-Suppose your web app backend wants to let a client upload a large file, for example by rendering and then sending a page with a file input field, or by answering a specific AJAX request by the client (what exactly you do there is none of Incoming!!'s business). This is the sequence in which the file upload with Incoming!! happens:
+Suppose your web app backend wants to let a client upload a large file, for example by rendering and then sending a page with a file input field, or by answering a specific AJAX request by the client (what exactly you do there is none of Incoming!!'s business). This is, from that point on, the sequence in which the file upload with Incoming!! happens:
 
 
 ![Upload sequence step 1][fig-seq1]
@@ -69,7 +69,7 @@ Suppose your web app backend wants to let a client upload a large file, for exam
 
 ![Upload sequence step 6][fig-seq6]
 
-**6)** your web app backend tells the Incoming!! server that it is finished retrieving the file. This can be done in two ways. Either your web app backend simply responds to Incoming!!'s request with "done". However, your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the upload is done.
+**6)** your web app backend tells the Incoming!! server that it is finished retrieving the file. This can be done in two ways. Either your web app backend simply responds to Incoming!!'s request with "done". Your web app backend can also answer "wait" if processing the file takes some time, and then call Incoming!!'s HTTP `POST /backend/finish_upload` function later to tell Incoming!! that the upload is done.
 
 ![Upload sequence step 7][fig-seq7]
 
@@ -88,6 +88,9 @@ In order to use Incoming!!, your app needs to:
 * (frontend) provide a callback that is called when the upload and handover is finished.
 
 The example web apps we provide along with Incoming!!'s source code implement all of that.
+
+
+Back to [Main Page](../README.md) | continue to [Installation](installation.md).
 
 [fig-bad]: figures/bad.png
 [fig-components]: figures/components.png
