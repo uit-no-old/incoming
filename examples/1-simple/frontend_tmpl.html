@@ -12,15 +12,15 @@ window.onload = function() {
         output_state_msg.innerHTML = "Did not load incoming lib - was it blocked? Is the incoming server offline?";
         return;
     }
+
+    // before we do any uploads, we have to tell the incoming!! js library the
+    // host:port of the incoming!! server
+    incoming.set_server_hostname("{{ public_incoming_host }}");
 };
 
 function upload_file(upload_id, f) {
     // bail out if we did not get a file to upload
     if (typeof f === 'undefined') { return; }
-
-    // before we do any uploads, we have to tell the incoming!! js library the
-    // host:port of the incoming!! server
-    incoming.set_server_hostname("{{ public_incoming_host }}");
 
     // define a callback for all sorts of progress in the uploader
     var update = function(uploader) {
