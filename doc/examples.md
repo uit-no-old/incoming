@@ -293,7 +293,7 @@ upload\_file now can't just initialize an Uploader object because it doesn't hav
     xhr.send(null);
 ```
 
-In an actual web app, you likely use some JavaScriptframework that lets you do HTTP requests much nicer than that. In any case, the mechanism is this: request upload ticket from backend, and when that arrives, initialize and start an Uploader.
+In an actual web app, you likely use some JavaScript framework that lets you do HTTP requests much nicer than that. In any case, the mechanism is this: request upload ticket from backend, and when that arrives, initialize and start an Uploader.
 
 You could easily run several concurrent uploads this way (one Uploader object per upload), but to keep it simple, our example web app frontend only allows the user to upload several files sequentially.
 
@@ -371,4 +371,4 @@ The 'move\_deferred' function then runs in an own thread. It moves the file, the
 
 The Incoming!! server will deem the upload successfully handed over as soon as it gets the request to finish\_upload. It will then also notify the frontend that the upload is finished.
 
-Note that the way example 2 does it is bad design. You should not use start Python threads in Bottle requests unless your app doesn't need to scale. We just did it this way here to demonstrate the mechanism.
+Note that the way example 2 does it is horrible design. You should not start Python threads in Bottle requests unless your app doesn't need to scale. In general, your web app backend should probably try to avoid running any time-consuming code if you want it to scale. We just did it this way here to demonstrate the mechanism.
