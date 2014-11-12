@@ -70,7 +70,8 @@ def retrieve_incoming_file() :
         incoming_path = request.params["filename"]
         dest_path = os.path.join("uploads", upload["filename"])
         answer_thread = threading.Thread(target=move_deferred,
-                args=(request.params["id"], incoming_path, dest_path, 10))
+                args=(request.params["id"], upload["secret"],
+                    incoming_path, dest_path, 10))
         answer_thread.start()
         return "wait"
     else :
@@ -82,7 +83,7 @@ def retrieve_incoming_file() :
         return ""
 
 
-def move_deferred(upload_id, source_path, dest_path, delay_min_s) :
+def move_deferred(upload_id, upload_secret, source_path, dest_path, delay_min_s) :
     # move file, then perhaps wait until delay_min_s seconds have passed since
     # invocation
     ts_start = time.time()
@@ -92,7 +93,8 @@ def move_deferred(upload_id, source_path, dest_path, delay_min_s) :
         time.sleep(sleep_for)
 
     # now tell the Incoming!! server that we are done
-    req_params = { "id" : upload_id }
+    req_params = { "id" : upload_id,
+            "backendSecret" : upload_secret }
     req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
         params = req_params)
 

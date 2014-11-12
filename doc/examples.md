@@ -336,7 +336,7 @@ def retrieve_incoming_file() :
         return abort(418, "I shit you not: I am a teapot")
 ```
 
-This is a quite unlikely attack vector, so we are not sure whether we keep this feature in.
+Likewise, the Incoming!! server will check the secret whenever one of its backend-only HTTP functions are called (cancel\_upload and finish\_upload).
 
 
 ### Deferred "got it" notification to Incoming!! server
@@ -349,7 +349,8 @@ Instead of moving the file in the 'upload\_finished' request handler, example 2 
         incoming_path = request.params["filename"]
         dest_path = os.path.join("uploads", upload["filename"])
         answer_thread = threading.Thread(target=move_deferred,
-                args=(request.params["id"], incoming_path, dest_path, 10))
+                args=(request.params["id"], upload["secret"],
+                    incoming_path, dest_path, 10))
         answer_thread.start()
         return "wait"
 ```
@@ -364,7 +365,8 @@ The 'move\_deferred' function then runs in an own thread. It moves the file, the
         time.sleep(sleep_for)
 
     # now tell the Incoming!! server that we are done
-    req_params = { "id" : upload_id }
+    req_params = { "id" : upload_id,
+        "backendSecret" : upload_secret }
     req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
         params = req_params)
 ```
