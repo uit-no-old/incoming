@@ -21,14 +21,16 @@ After loading the JavaScript file, there is one more object in the global namesp
 The `incoming` library exposes two functions. Other than that, there is nothing of interest.
 
 
-### `incoming.set_server_hostname( hostname )`
+#### `incoming.set_server_hostname( hostname )`
 
 Sets the hostname where to find the Incoming!! server. This should be set to the same value as INCOMING\_HOSTNAME you used when loading the JavaScript file. It is sad that we need this function at all, but in JavaScript running in a browser, there is no neat way to find out from which host a JavaScript file has been loaded from.
 
 You need to call this function only once, but it has to be called before any `Uploader` objects are created. We recommend calling it as soon as the page has loaded, for example in `window.onload`. 
 
 
-### incoming.Uploader
+#### `incoming.Uploader( upload_id, file )`
+
+##### `onprogress( uploader )`
 
 
 
