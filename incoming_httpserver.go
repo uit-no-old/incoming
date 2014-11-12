@@ -35,7 +35,6 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"bitbucket.org/kardianos/osext"
@@ -134,8 +133,6 @@ func FinishUploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
-	// Note that this can be called by both backend and frontend
-
 	// fetch uploader for given id
 	id := r.FormValue("id")
 	if id == "" {
@@ -151,18 +148,12 @@ func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// let uploader cancel (async because this method should return quickly)
-	tellWebAppBackend := true
-	if strings.Contains(r.URL.String(), "backend/") {
-		tellWebAppBackend = false
-	}
 	go func() {
-		uploader.Cancel(tellWebAppBackend, "Cancelled by request",
+		uploader.Cancel(false, "Cancelled by request",
 			time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
 		uploader.CleanUp()
 	}()
 	fmt.Fprint(w, "ok")
-	// when uploader is done cancelling, it will send "upload finished" to web
-	// app backend if necessary, so we are done here
 	return
 }
 
@@ -196,8 +187,6 @@ func main() {
 	routes.HandleFunc("/incoming/backend/new_upload", NewUploadHandler).
 		Methods("POST")
 	routes.HandleFunc("/incoming/backend/cancel_upload", CancelUploadHandler).
-		Methods("POST")
-	routes.HandleFunc("/incoming/frontend/cancel_upload", CancelUploadHandler).
 		Methods("POST")
 	routes.HandleFunc("/incoming/backend/finish_upload", FinishUploadHandler).
 		Methods("POST")
