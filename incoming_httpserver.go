@@ -8,6 +8,7 @@ Roadmap:
 - choose a license
 --> 0.1 finished
 - improve logging
+- error codes
 
 - (optional) file verification after upload: checksum in browser and backend, then
   assert that checksum is the same. Most likely error scenario: user updated file on
