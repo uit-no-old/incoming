@@ -86,7 +86,7 @@ func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// secret cookie to POST to finish URL later
-	backendSecret := r.FormValue("backendSecret") // optional
+	backendSecret := r.FormValue("backendSecret") // optional, "" if not given
 
 	// make (and pool) new uploader
 	storageDirAbsolute, _ := filepath.Abs(appVars.config.StorageDir)
@@ -121,6 +121,14 @@ func FinishUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// assert that 'backend secret string' matches (if it's not given, it's an
+	// empty string, which might be just fine)
+	if uploader.GetBackendSecret() != r.FormValue("backendSecret") {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "backendSecret not given or wrong")
+		return
+	}
+
 	// tell uploader that handover is done
 	err := uploader.HandoverDone()
 
@@ -147,12 +155,21 @@ func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// assert that 'backend secret string' matches (if it's not given, it's an
+	// empty string, which might be just fine)
+	if uploader.GetBackendSecret() != r.FormValue("backendSecret") {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "backendSecret not given or wrong")
+		return
+	}
+
 	// let uploader cancel (async because this method should return quickly)
 	go func() {
 		uploader.Cancel(false, "Cancelled by request",
 			time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
 		uploader.CleanUp()
 	}()
+
 	fmt.Fprint(w, "ok")
 	return
 }
