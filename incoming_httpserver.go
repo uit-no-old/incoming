@@ -4,7 +4,10 @@ Incoming!!
 Roadmap:
 - document. make sure to mention that adblock (at least on chrome) causes high
   CPU usage. recommend to disable adblock for the page that uses incoming.
+- make versioned URLs
+- choose a license
 --> 0.1 finished
+- improve logging
 
 - (optional) file verification after upload: checksum in browser and backend, then
   assert that checksum is the same. Most likely error scenario: user updated file on
