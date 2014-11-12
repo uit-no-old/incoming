@@ -18,19 +18,63 @@ After loading the JavaScript file, there is one more object in the global namesp
 
 ### The `incoming` library object
 
-The `incoming` library exposes two functions. Other than that, there is nothing of interest.
+The `incoming` library only exposes two functions.
 
 
 #### `incoming.set_server_hostname( hostname )`
 
-Sets the hostname where to find the Incoming!! server. This should be set to the same value as INCOMING\_HOSTNAME you used when loading the JavaScript file. It is sad that we need this function at all, but in JavaScript running in a browser, there is no neat way to find out from which host a JavaScript file has been loaded from.
+Sets the hostname where to find the Incoming!! server. This should be set to the same value as INCOMING\_HOSTNAME you used when loading the JavaScript file.
 
 You need to call this function only once, but it has to be called before any `Uploader` objects are created. We recommend calling it as soon as the page has loaded, for example in `window.onload`. 
+
+It is sad that we need this function at all, but in JavaScript running in a browser, there is no good way to find out which host a JavaScript file has been loaded from.
 
 
 #### `incoming.Uploader( upload_id, file )`
 
-##### `onprogress( uploader )`
+Creates and returns an uploader object, which will do all the magic for one file. `upload_id` is an Incoming!! upload ticket ID that you somehow got from your backend (see [system overview](overview.md), [examples](examples.md)). `file` is a [File](https://developer.mozilla.org/en/docs/Web/API/File) object that you can get from an HTML file selector or file drop area.
+
+If you want to upload several files concurrently, use several uploader objects, one for each file. Each file needs its own upload ticket.
+
+
+### `Uploader` objects
+
+An uploader object uploads one file. Each uploader object needs its own upload ticket. Several uploader objects can upload file concurrently.
+
+In an uploader object, there are many properties and flags that you can use for inspection. In order to track progress, you can set one callback that is called whenever any observable property changes its value (`onprogress`). There are three other settable callbacks that are called in addition to `onprogress` on important events: `onfinished`, `oncancelled`, and `onerror`. To control an upload, three functions are available: `start`, `pause`, and `cancel`.
+
+
+#### Properties
+
+* `filename` - name of the file, without any path information
+* `bytes_total` - length of the file, in bytes
+* `bytes_tx` - number of bytes that have been sent to the Incoming!! server
+* `bytes_acked` - number of bytes that have arrived at the Incoming!! server
+* `bytes_ahead` - number of bytes that have been sent to the Incoming!! server but have not yet arrived (they might be in some buffer outside our control on either side, or they might be on their way).
+* `frac_complete` - fraction of upload that has arrived at the Incoming!! server. This is a numerical value between 0 and 1. When the value is 1, the file has been uploaded to the Incoming!! server, but that doesn't mean that the upload is finished: that is only the case after Incoming!! has handed the file over to your backend. There is no measure of progress for that; handover starts when the file has arrived at Incoming!!, and it ends when your backend reports back to Incoming!! that it is finished getting the file. Depending on your application, that might take milliseconds or ages.
+* `chunks_tx_now`
+* `chunks_acked_now`
+* `chunks_ahead`
+* `state_msg`
+* `cancel_msg`
+* `error_code`
+
+
+#### Flags
+
+All flags are boolean.
+
+* `connected`
+* `finished`
+* `paused`
+* `can_pause`
+* `cancelling`
+* `cancelled`
+* `can_cancel`
+
+
+
+#### `onprogress( uploader )`
 
 
 
