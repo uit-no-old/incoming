@@ -51,7 +51,7 @@ type UploadToLocalFile struct {
 	fileSize        int64
 
 	signalFinishURL        *url.URL
-	signalFinishSecret     string
+	backendSecret          string
 	removeFileWhenFinished bool
 	chHandoverWait         chan error
 	chHandoverDone         chan struct{}
@@ -69,14 +69,14 @@ type UploadToLocalFile struct {
 // NewUploadToLocalFile makes a local file uploader.
 func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	signalFinishURL *url.URL, removeFileWhenFinished bool,
-	signalFinishSecret string, idleTimeout time.Duration) Uploader {
+	backendSecret string, idleTimeout time.Duration) Uploader {
 
 	u := new(UploadToLocalFile)
 	u.lock = new(sync.RWMutex)
 	u.lock_state = new(sync.Mutex)
 	u.pool = pool
 	u.signalFinishURL = signalFinishURL
-	u.signalFinishSecret = signalFinishSecret
+	u.backendSecret = backendSecret
 	u.removeFileWhenFinished = removeFileWhenFinished
 	u.boundToSocketHandler = false
 	u.dir = storageDir
@@ -107,6 +107,12 @@ func (u *UploadToLocalFile) GetSignalFinishURL() *url.URL {
 	defer u.lock.RUnlock()
 	ret := *u.signalFinishURL
 	return &ret
+}
+
+func (u *UploadToLocalFile) GetBackendSecret() string {
+	u.lock.RLock()
+	defer u.lock.RUnlock()
+	return u.backendSecret
 }
 
 func (u *UploadToLocalFile) GetCreationTime() time.Time {
@@ -388,7 +394,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		v.Set("id", u.id)
 		v.Set("filename", u.path)
 		v.Set("filenameFromBrowser", u.nameFromBrowser)
-		v.Set("secret", u.signalFinishSecret)
+		v.Set("secret", u.backendSecret)
 		v.Set("cancelled", "no")
 		v.Set("cancelReason", "")
 		u.lock.Lock()
@@ -527,7 +533,7 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 
 	// tell app backend that we have cancelled. We don't need to hold the lock
 	// for this.
-	signalFinishSecret := u.signalFinishSecret
+	backendSecret := u.backendSecret
 	signalFinishURL := u.signalFinishURL
 	id := u.id
 	u.lock.Unlock()
@@ -539,7 +545,7 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	v.Set("id", id)
 	v.Set("filename", "")
 	v.Set("filenameFromBrowser", u.nameFromBrowser)
-	v.Set("secret", signalFinishSecret)
+	v.Set("secret", backendSecret)
 	v.Set("cancelled", "yes")
 	v.Set("cancelReason", reason)
 	resp, err := htclient.PostForm(signalFinishURL.String(), v) // this takes time

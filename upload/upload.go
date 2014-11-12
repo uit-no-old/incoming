@@ -53,6 +53,11 @@ type Uploader interface {
 	// when the upload is finished.
 	GetSignalFinishURL() *url.URL
 
+	// GetBackendSecret returns the secret string that the web app backend has
+	// given to Incoming!! when requesting an upload ticket. The returned
+	// string might be empty, in which case there is no secret string.
+	GetBackendSecret() string
+
 	// GetId returns the (textual) ID of the upload.
 	GetId() string
 

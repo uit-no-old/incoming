@@ -31,7 +31,7 @@ def request_upload() :
     req_params = { "destType" : "file",
             "signalFinishURL" : "http://%s/api/backend/upload_finished" % _config["internal_app_host"],
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
-            "signalFinishSecret" : secret,
+            "backendSecret" : secret,
             }
     req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 
