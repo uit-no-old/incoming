@@ -43,6 +43,8 @@ An uploader object uploads one file. Each uploader object needs its own upload t
 
 In an uploader object, there are many properties and flags that you can use for inspection. In order to track progress, you can set one callback that is called whenever any observable property changes its value (`onprogress`). There are three other settable callbacks that are called in addition to `onprogress` on important events: `onfinished`, `oncancelled`, and `onerror`. To control an upload, three functions are available: `start`, `pause`, and `cancel`.
 
+Typically, you would create an uploader object, define one or more callbacks, and then call start().
+
 
 #### Properties
 
@@ -50,31 +52,46 @@ In an uploader object, there are many properties and flags that you can use for 
 * `bytes_total` - length of the file, in bytes
 * `bytes_tx` - number of bytes that have been sent to the Incoming!! server
 * `bytes_acked` - number of bytes that have arrived at the Incoming!! server
-* `bytes_ahead` - number of bytes that have been sent to the Incoming!! server but have not yet arrived (they might be in some buffer outside our control on either side, or they might be on their way).
+* `bytes_ahead` - number of bytes that have been sent to the Incoming!! server but have not yet arrived (they might be in some buffer outside our control on either side, or they might be on their way, or they might have arrived but the Incoming!!'s server acknowledgement is still on its way back).
 * `frac_complete` - fraction of upload that has arrived at the Incoming!! server. This is a numerical value between 0 and 1. When the value is 1, the file has been uploaded to the Incoming!! server, but that doesn't mean that the upload is finished: that is only the case after Incoming!! has handed the file over to your backend. There is no measure of progress for that; handover starts when the file has arrived at Incoming!!, and it ends when your backend reports back to Incoming!! that it is finished getting the file. Depending on your application, that might take milliseconds or ages.
-* `chunks_tx_now`
-* `chunks_acked_now`
-* `chunks_ahead`
-* `state_msg`
-* `cancel_msg`
-* `error_code`
+* `chunks_tx_now` - number of chunks (messages containing file data) that have been sent during the current connection. When the connection is lost and re-established, this count goes back to 0. Chunk sizes may vary between connections (in the future, perhaps also during connections).
+* `chunks_acked_now` - number of chunks that have arrived at the Incoming!! server during the current connection. When the connection is lost and re-established, this count goes back to 0.
+* `chunks_ahead` - number of chunks that have been sent but have not been acknowledged yet.
+* `state_msg` - text describing the current state of the uploader.
+* `cancel_msg` - if the upload is cancelled, cancel\_msg contains a text describing the reason for the cancellation
+* `error_code` - if an error has occurred, error\_code contains a numerical error code. At present, there are no error codes yet :(
+* `error_msg` - if an error has occurred, error\_msg contains a textual error message.
 
 
 #### Flags
 
 All flags are boolean.
 
-* `connected`
-* `finished`
-* `paused`
-* `can_pause`
-* `cancelling`
-* `cancelled`
-* `can_cancel`
+* `connected` - true if uploader is connected to Incoming!! server, false if not
+* `finished` - true if upload is finished, i.e., it has successfully been handed over to the web app backend
+* `paused` - true is upload is currently paused
+* `can_pause` - true if upload can currently be paused. Upload can only be paused when chunks are being transferred to the Incoming!! server. It is not possible to pause uploads when they are already being handed over to the web app backend.
+* `cancelling` - true if the upload is currently cancelling. This is the case when the uploader has sent a cancellation message to the Incoming!! server and is waiting for a reply.
+* `cancelled` - true if the upload has been cancelled.
+* `can_cancel` - true if the upload can currently be cancelled. Uploads that are currently being handed over and paused uploads can not be cancelled.
 
 
+#### Callbacks
 
-#### `onprogress( uploader )`
+In an uploader object, you can set any of the following callback functions. All functions accept one parameter: the upload object.
+
+* `onprogress` - called whenever any of the observable properties and flags changes its value.
+* `onfinished` - called (in addition to onprogress) when the 'finished' flag value is changed from false to true.
+* `oncancelled` - called (in addition to onprogress) when the 'cancelled' flag value is changed from false to true.
+* `onerror` - called (in addition to onprogress) when an error occurs.
+
+
+#### Functions
+
+* `start()` - starts the upload.
+* `pause( what )` - pauses, unpauses, or toggles pause. 'what' can either be 'pause', 'unpause', or 'toggle'.
+* `cancel( reason )` - cancels the upload. 'reason' is a string and should explain why the caller cancel the upload.
+
 
 
 
