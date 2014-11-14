@@ -78,10 +78,6 @@ You can then configure and start an upload like this:
 
 ```javascript
 function upload_file(upload_id, f) {
-    // before we do any uploads, we have to tell the incoming!! js library the
-    // host:port of the incoming!! server
-    incoming.set_server_hostname("INCOMING_HOSTNAME");
-
     // define a callback for when upload is finished (i.e., the web app backend
     // got the file)
     var finished = function(uploader) {
