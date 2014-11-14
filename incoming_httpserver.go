@@ -1,33 +1,5 @@
 /*
 Incoming!!
-
-Roadmap:
-- document. make sure to mention that adblock (at least on chrome) causes high
-  CPU usage. recommend to disable adblock for the page that uses incoming.
-- make versioned URLs
-- choose a license
---> 0.1 finished
-- improve logging
-- error codes
-
-- (optional) file verification after upload: checksum in browser and backend, then
-  assert that checksum is the same. Most likely error scenario: user updated file on
-  disk while upload was running.
-- go through ways for web app to retrieve file
-  - available on filesystem? just give it the path to the file then (good enough if
-    incoming!! serves only one web app). web app must move file away (or copy it), then
-    tell incoming!! that it is finished. This is what we have now.
-  - web app could download the file (very bad idea with most web apps, as it takes time,
-    but this should be easy to implement)
-  - if stored in cloud storage (ceph?): object id will work. coolest solution, as the file
-    is stored in the right place right away
-
-open questions:
-- web app frontend must know name of incoming!! server. how will it get to know that?
-    - for now: web app backend knows. html includes URL to js file.
-- Incoming!! js code must know name of incoming!! server. how will it know?
-    - for now, there is a function set_server_hostname in the incoming lib that must
-	  be called by the web app frontend. Can we simplify this?
 */
 package main
 
