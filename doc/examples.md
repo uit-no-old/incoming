@@ -331,7 +331,7 @@ This 'secret' is later given back by the Incoming!! server when it notifies exam
 def retrieve_incoming_file() :
     upload = _uploads.get(request.params["id"], None)
 
-    if request.params["secret"] != upload["secret"] :
+    if request.params["backendSecret"] != upload["secret"] :
         print "upload_finished: wrong secret for upload id %s" % request.params["id"]
         return abort(418, "I shit you not: I am a teapot")
 ```

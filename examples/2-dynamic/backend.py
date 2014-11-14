@@ -56,7 +56,7 @@ def retrieve_incoming_file() :
     if upload == None :
         return abort(404, "There's no upload with that ID")
 
-    if request.params["secret"] != upload["secret"] :
+    if request.params["backendSecret"] != upload["secret"] :
         print "upload_finished: wrong secret for upload id %s" % request.params["id"]
         return abort(418, "I shit you not: I am a teapot")
 

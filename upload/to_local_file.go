@@ -394,7 +394,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		v.Set("id", u.id)
 		v.Set("filename", u.path)
 		v.Set("filenameFromBrowser", u.nameFromBrowser)
-		v.Set("secret", u.backendSecret)
+		v.Set("backendSecret", u.backendSecret)
 		v.Set("cancelled", "no")
 		v.Set("cancelReason", "")
 		u.lock.Lock()
@@ -545,7 +545,7 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 	v.Set("id", id)
 	v.Set("filename", "")
 	v.Set("filenameFromBrowser", u.nameFromBrowser)
-	v.Set("secret", backendSecret)
+	v.Set("backendSecret", backendSecret)
 	v.Set("cancelled", "yes")
 	v.Set("cancelReason", reason)
 	resp, err := htclient.PostForm(signalFinishURL.String(), v) // this takes time
