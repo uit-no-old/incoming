@@ -100,3 +100,4 @@ Documentation
 * [Installation: manual or automated installation of Incoming!!, example apps, and an example reverse proxy](doc/installation.md)
 * [Getting started: example web apps using Incoming!!](doc/examples.md)
 * [Incoming!! Frontend and Backend API](doc/api.md)
+* [Important notes for developers and users](doc/notes.md)

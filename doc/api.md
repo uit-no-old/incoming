@@ -112,7 +112,7 @@ In order to secure the interaction between your web app backend and Incoming!!, 
 Acquire an upload ticket. Parameters (passed as form values):
 
 * `signalFinishURL` - URL the Incoming!! server should POST to when the file has arrived. For details on that function you have to provide check the 'Your web app backend HTTP API' section below.
-* `destType` (optional, defaults to 'file') - destination type - 'file' or some other sort of storage object. At present, only 'file' is supported, but we will probably add support for storage systems such as Ceph in the future.
+* `destType` (optional, defaults to 'file') - destination type. 'file' or some other sort of storage object. At present, only 'file' is supported, but we will probably add support for storage systems such as Ceph in the future.
 * `removeFileWhenFinished` (optional, defaults to 'true') - should the Incoming!! server, when all is done, remove the uploaded file or not? If your web app backend moves the file to another location during handover, you should set this to 'false'.
 * `backendSecret` (optional, defaults to '') - an arbitrary string that will henceforth be used as the backend secret for this upload.
 
