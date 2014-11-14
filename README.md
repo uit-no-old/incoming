@@ -3,7 +3,7 @@ Incoming!!
 
 Large file uploads with web browsers are frustrating because you can not implement them in a straightforward and painless way. When implemented wrong, they stall your web app and might even break it, and implementing them right is not easily done. Incoming!! handles large file uploads for your web apps so you don't have to. In the browser, it chops up a large file into little pieces, transfers those over to its own server application, which puts them together, stores them, and finally hands the uploaded file over to your web app backend. Disconnects during upload are no problem, and explicit pause / resume is also supported. With Incoming!!, both the complexity and performance impact of large file uploads are off your web app's back.
 
-Incoming!! consists of a server application and a JavaScript client library. The server can run alongside your web app backend or centrally in your organization, and the JavaScript client is used directly in your web app's frontend in the browser.
+Incoming!! consists of a server application and a JavaScript client library. The server(s) can run alongside your web app backend or centrally in your organization, and the JavaScript client is used directly in your web app's frontend in the browser.
 
 When you want to upload a large file, your web app backend first fetches an upload ticket from the Incoming!! server. Then, using that ticket, your frontend can use the Incoming!! JavaScript library to send the large file to the Incoming!! server. When the upload is finished, the Incoming!! server hands the file over to your web app backend.
 
