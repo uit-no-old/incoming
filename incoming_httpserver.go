@@ -167,14 +167,19 @@ func CancelUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// let uploader cancel (async because this method should return quickly)
-	go func() {
-		uploader.Cancel(false, "Cancelled by request",
-			time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
-		uploader.CleanUp()
-	}()
+	// let uploader cancel
+	err := uploader.Cancel(false, "Cancelled by request",
+		time.Duration(appVars.config.HandoverTimeoutS)*time.Second)
 
-	fmt.Fprint(w, "ok")
+	// on success, clean up and return "ok". On failure, return error message
+	if err == nil {
+		uploader.CleanUp()
+		fmt.Fprint(w, "ok")
+	} else {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprintf(w, "%v", err)
+	}
+
 	return
 }
 
