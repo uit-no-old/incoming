@@ -3,7 +3,9 @@ Incoming!!
 
 Large file uploads with web browsers are frustrating because you can not implement them in a straightforward and painless way. When implemented wrong, they stall your web app and might even break it, and implementing them right is not easily done. Incoming!! handles large file uploads for your web apps so you don't have to. In the browser, it chops up a large file into little pieces, transfers those over to its own server application, which puts them together, stores them, and finally hands the uploaded file over to your web app backend. Disconnects during upload are no problem, and explicit pause / resume is also supported. With Incoming!!, both the complexity and performance impact of large file uploads are off your web app's back.
 
-Incoming!! consists of a server application and a JavaScript client library. The server can run alongside your web app backend or centrally in your organization, and the JavaScript client is used directly in your web app's frontend in the browser. When you want to upload a large file, your web app backend first fetches an upload ticket from the Incoming!! server. Then, using that ticket, your frontend can use the Incoming!! JavaScript library to send the large file to the Incoming!! server. When the upload is finished, the Incoming!! server hands the file over to your web app backend.
+Incoming!! consists of a server application and a JavaScript client library. The server can run alongside your web app backend or centrally in your organization, and the JavaScript client is used directly in your web app's frontend in the browser.
+
+When you want to upload a large file, your web app backend first fetches an upload ticket from the Incoming!! server. Then, using that ticket, your frontend can use the Incoming!! JavaScript library to send the large file to the Incoming!! server. When the upload is finished, the Incoming!! server hands the file over to your web app backend.
 
 Your web app backend and the Incoming!! server communicate through simple HTTP requests: Incoming!! provides an endpoint for handing out upload tickets, and issues a request to your web app backend when an upload is finished. To its JavaScript library, Incoming!! exposes a WebSocket server. Incoming!! also hosts the JavaScript library file.
 
@@ -15,7 +17,7 @@ Status
 
 Incoming!! is in development. Most of it is in place and works. It can already be used, but we don't consider it and the API stable yet.
 
-At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide enough upload bandwidth. This was always in the backs of our heads during design and implementation, and is the next major feature we will implement.
+At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide ample upload bandwidth. This has always been in the backs of our heads during design and implementation, and is the next major feature we will implement.
 
 
 Usage example
