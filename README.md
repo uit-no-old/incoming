@@ -9,7 +9,13 @@ Your web app backend and the Incoming!! server communicate through simple HTTP r
 
 The Incoming!! server is implemented in Go, and the JavaScript library in, well, JavaScript, without use of external libraries. The whole thing is free and open source, licensed under the permissive TODO LICENSE.
 
-At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide enough upload bandwidth. This use case is always in the back of our heads, but not fully implemented yet.
+
+Status
+------
+
+Incoming!! is in development. Most of it is in place and works. It can already be used, but we don't consider it and the API stable yet.
+
+At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide enough upload bandwidth. This was always in the backs of our heads during design and implementation, and is the next major feature we will implement.
 
 
 Usage example
@@ -101,3 +107,16 @@ Documentation
 * [Getting started: example web apps using Incoming!!](doc/examples.md)
 * [Incoming!! Frontend and Backend API](doc/api.md)
 * [Important notes for developers and users](doc/notes.md)
+
+
+Changelog, roadmap etc.
+-----------------------
+
+* [Changelog](doc/changelog.md)
+* [Roadmap](doc/roadmap.md)
+
+
+License
+-------
+
+Incoming!! is licensed under the TODO FIND A DAMN LICENSE
