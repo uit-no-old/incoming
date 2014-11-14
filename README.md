@@ -23,14 +23,13 @@ At the present stage of development, Incoming!! can already be deployed together
 Usage example
 -------------
 
-Simple backend code in Python (using the simple [Bottle](http://bottlepy.org/) web framework) can look like the following.
+Simple backend code in Python (using the tiny [Bottle](http://bottlepy.org/) web framework) can look like the following.
 
-Request an upload ticket from the Incoming!! server like this (using the excellent and simple [Requests](http://python-requests.org) library):
+Request an upload ticket from the Incoming!! server like this (using the [Requests](http://python-requests.org) library):
 
 ```python
-req_params = { "signalFinishURL" : "http://APP_HOSTNAME/api/backend/upload_finished" }
 req = requests.post("http://INCOMING_HOSTNAME/incoming/backend/new_upload",
-                     params=req_params)
+                     params = { "signalFinishURL" : "http://APP_HOSTNAME/api/backend/upload_finished" })
 ```
 
 In the request for a ticket, you tell the Incoming!! server which URL to POST to later when the upload is finished.
@@ -42,7 +41,7 @@ upload_id = req.text
 return template("upload_page_template.html", upload_id = upload_id)
 ```
 
-Later, when the upload is finished, the Incoming!! server will POST to the URL your specified above. In that request, you get the path of the uploaded filename so you can move the file to its destination. So in your backend you need a handler for that:
+Later, when the upload is finished, the Incoming!! server will POST to the URL you specified above. In that request, you get the path of the uploaded file so you can move the file to its destination. This is how a handler for that URL can look like in your web app backend:
 
 ```python
 @post('/api/backend/upload_finished')
@@ -59,23 +58,23 @@ def retrieve_incoming_file() :
     return "done"
 ```
 
-After you return "done", the Incoming!! server will notify your frontend that the upload is all done. Then both your backend and your frontend know that the upload is finished.
+After you return "done", the Incoming!! server notifies your frontend that the upload is all done. Then both your backend and your frontend know that the upload is finished.
 
-Speaking of your frontend, here's what you need there. First, you need to load the Incoming!! JavaScript library:
+Speaking of your frontend, here's what you need to do there. First, you have to load the Incoming!! JavaScript library:
 
 ```html
 <script src="http[s]://INCOMING_HOSTNAME/incoming/frontend/incoming.js"></script>
 ```
 
-Then, you need some sort of file input, for example a file input field. You can attach an event handler right there and then, to kick off an upload as soon as the user chooses a file:
+Then, you need some sort of file input, for example a file input field. To that, you can attach an event handler to kick off an upload as soon as the user chooses a file:
 
 ```html
 <input type="file" id="input_file" onchange="upload_file('{{ upload_id }}', this.files[0])"/>
 ```
 
-Here, we have rendered in the upload ticket id in the backend. You could of course obtain one in other ways, for example with an extra bit of JavaScript that does an HTTP request to your backend (one of our example apps does that).
+Here, we have rendered in the upload ticket id in the backend. You could of course obtain a ticket in other ways, for example with an extra bit of JavaScript that does an HTTP request to your backend (one of our example apps does that).
 
-The event handler can then configure and start an upload like this:
+You can then configure and start an upload like this:
 
 ```javascript
 function upload_file(upload_id, f) {
@@ -98,7 +97,7 @@ function upload_file(upload_id, f) {
 
 When `uploader.start()` is called, Incoming!! will do its thing. When everything is done, that is, when the file has been uploaded and handed over to your web app backend, your "upload is finished" callback is called. Then you know that your app has gotten the file.
 
-This is basically it. We ship two example web apps that serve as more real world code examples, handling errors and covering more of Incoming!!'s features. In most usage scenarios there is also the webserver / reverse proxy config to take care of. For that, we also document and ship an example.
+This is basically it. We ship two example web apps that serve as more comprehensive code examples, handling errors and covering more of Incoming!!'s features. In most usage scenarios there is also the webserver / reverse proxy config to take care of. For that, we also document and ship an example.
 
 
 Documentation
