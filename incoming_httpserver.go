@@ -138,6 +138,7 @@ func FinishUploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// return error message or "ok"
 	if err != nil {
+		w.WriteHeader(http.StatusPreconditionFailed)
 		fmt.Fprint(w, err.Error())
 	} else {
 		fmt.Fprint(w, "ok")
