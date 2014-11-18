@@ -19,7 +19,7 @@ def main_page() :
                 _config["internal_app_host"],
             "removeFileWhenFinished" : "false" # we do this ourselves, by moving the file
             }
-    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"],
+    req = requests.post("http://%s/incoming/0.1/backend/new_upload" % _config["internal_incoming_host"],
             params=req_params)
 
     # if status code is OK, the request returns the upload id in the return

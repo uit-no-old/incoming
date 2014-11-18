@@ -183,15 +183,15 @@ func main() {
 
 	// --- set up http server
 	routes := mux.NewRouter()
-	routes.HandleFunc("/incoming/backend/new_upload", NewUploadHandler).
+	routes.HandleFunc("/incoming/0.1/backend/new_upload", NewUploadHandler).
 		Methods("POST")
-	routes.HandleFunc("/incoming/backend/cancel_upload", CancelUploadHandler).
+	routes.HandleFunc("/incoming/0.1/backend/cancel_upload", CancelUploadHandler).
 		Methods("POST")
-	routes.HandleFunc("/incoming/backend/finish_upload", FinishUploadHandler).
+	routes.HandleFunc("/incoming/0.1/backend/finish_upload", FinishUploadHandler).
 		Methods("POST")
-	routes.HandleFunc("/incoming/frontend/upload_ws", websocketHandler).
+	routes.HandleFunc("/incoming/0.1/frontend/upload_ws", websocketHandler).
 		Methods("GET")
-	routes.HandleFunc("/incoming/frontend/incoming.js", ServeJSFileHandler).
+	routes.HandleFunc("/incoming/0.1/frontend/incoming.js", ServeJSFileHandler).
 		Methods("GET")
 
 	// --- run server forever

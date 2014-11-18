@@ -26,7 +26,7 @@ def main_page() :
                 _config["internal_app_host"],
             "removeFileWhenFinished" : "false" # we do this ourselves, by moving the file
             }
-    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
+    req = requests.post("http://%s/incoming/0.1/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 ```
 
 The POST request goes to the Incoming!! server (whose host:port we know from the command line) and specifies two parameters:
@@ -101,7 +101,7 @@ The frontend is the upload page that is displayed in the user's browser. It is s
 First, the Incoming!! JavaScript library is loaded:
 
 ```html
-<script src="{{ scheme }}://{{ public_incoming_host }}/incoming/frontend/incoming.js"></script>
+<script src="{{ scheme }}://{{ public_incoming_host }}/incoming/0.1/frontend/incoming.js"></script>
 ```
 
 'scheme' and 'public\_incoming\_host' are template substitutions reflecting the system setup and make sure that the browser finds the library.
@@ -320,7 +320,7 @@ To keep not the middle man but at least the vandals out (the middle man can in a
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
             "backendSecret" : secret,
             }
-    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
+    req = requests.post("http://%s/incoming/0.1/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 
 ```
 
@@ -341,7 +341,7 @@ Likewise, the Incoming!! server will check the secret whenever one of its backen
 
 ### Deferred "got it" notification to Incoming!! server
 
-When the Incoming!! server notified example 1 that the upload had arrived, example 1 would move the file and then answer that request with "done". This is okay if it doesn't take much time to move the file (max a few seconds). If processing the file takes any longer, the web app backend should instead answer the request with "wait", and then after processing is done, access Incoming!!'s POST /incoming/backend/finish\_upload. This is what example 2 does (even though it doesn't do or delegate any processing on the file).
+When the Incoming!! server notified example 1 that the upload had arrived, example 1 would move the file and then answer that request with "done". This is okay if it doesn't take much time to move the file (max a few seconds). If processing the file takes any longer, the web app backend should instead answer the request with "wait", and then after processing is done, access Incoming!!'s POST /incoming/0.1/backend/finish\_upload. This is what example 2 does (even though it doesn't do or delegate any processing on the file).
 
 Instead of moving the file in the 'upload\_finished' request handler, example 2 starts a new thread which does just that, and answers "wait":
 
@@ -367,7 +367,7 @@ The 'move\_deferred' function then runs in an own thread. It moves the file, the
     # now tell the Incoming!! server that we are done
     req_params = { "id" : upload_id,
         "backendSecret" : upload_secret }
-    req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
+    req = requests.post("http://%s/incoming/0.1/backend/finish_upload" % _config["internal_incoming_host"],
         params = req_params)
 ```
 

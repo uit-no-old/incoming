@@ -265,7 +265,7 @@ _incoming_lib = function() {
             }
 
             // open WebSocket
-            ws = new WebSocket(ws_scheme + '://' + server_hostname + '/incoming/frontend/upload_ws');
+            ws = new WebSocket(ws_scheme + '://' + server_hostname + '/incoming/0.1/frontend/upload_ws');
             //ws.binaryType = "arraybuffer"; // relevant only for recv? http://dev.w3.org/html5/websockets/#dom-websocket-binarytype
 
             ws.onopen = function onopen() {

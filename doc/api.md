@@ -10,7 +10,7 @@ Incoming!! JavaScript library (frontend)
 Your web app's frontend loads the JavaScript library like any other JavaScript library, for example by using a `<script>` tag:
 
 ```html
-<script src="http[s]://INCOMING_HOSTNAME/incoming/frontend/incoming.js"></script>
+<script src="http[s]://INCOMING_HOSTNAME/incoming/0.1/frontend/incoming.js"></script>
 ```
 
 After loading the JavaScript file, there is one more object in the global namespace: `incoming`. It contains the library.
@@ -107,7 +107,7 @@ In order to secure the interaction between your web app backend and Incoming!!, 
 
 ### Functions
 
-#### `POST /incoming/backend/new_upload`
+#### `POST /incoming/0.1/backend/new_upload`
 
 Acquire an upload ticket. Parameters (passed as form values):
 
@@ -119,7 +119,7 @@ Acquire an upload ticket. Parameters (passed as form values):
 Return value (passed as response body): upload ticket id - a UUID string.
 
 
-#### `POST /incoming/backend/cancel_upload`
+#### `POST /incoming/0.1/backend/cancel_upload`
 
 Cancel an ongoing upload if it is not already too late for that (i.e., if Incoming!! is not already handing the file over to your web app backend). Parameters (passed as form values):
 
@@ -129,7 +129,7 @@ Cancel an ongoing upload if it is not already too late for that (i.e., if Incomi
 Return value (passed as response body): 'ok'
 
 
-#### `POST /incoming/backend/finish_upload`
+#### `POST /incoming/0.1/backend/finish_upload`
 
 URL to POST to when deferred finish notification is used, i.e., when Incoming!!'s request to your web app backend's signalFinishURL is answered with 'wait' and not 'done'.
 
@@ -147,7 +147,7 @@ Your web app backend must expose one HTTP function to the Incoming!! server: the
 
 #### `POST /api/backend/hand_over_upload`
 
-Accessed by the Incoming!! server when an upload has arrived and can be handed over. Answer this request either with 'wait' or 'done'. When the answer is 'wait', your web app backend must POST to Incoming!!'s /incoming/backend/finish\_upload later in order to signal to Incoming!! that the upload is finished. When the answer is "done", Incoming!! considers the upload finished as soon as it gets that response.
+Accessed by the Incoming!! server when an upload has arrived and can be handed over. Answer this request either with 'wait' or 'done'. When the answer is 'wait', your web app backend must POST to Incoming!!'s /incoming/0.1/backend/finish\_upload later in order to signal to Incoming!! that the upload is finished. When the answer is "done", Incoming!! considers the upload finished as soon as it gets that response.
 
 Parameters:
 

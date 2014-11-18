@@ -53,7 +53,7 @@ server {
     # it into a web app - just funnel all requests to /incoming/... to the
     # Incoming!! server.
 
-    location /incoming/ {
+    location /incoming/0.1/ {
         proxy_pass http://<MACHINE INCOMING!! SERVER RUNS ON>:4000;
 
         # the following options are necessary for WebSocket support
@@ -74,7 +74,7 @@ server {
     # be able to access. If only requests "from the outside" go through this reverse
     # proxy, then we can just flat out deny all accesses to the "backend only" URLs.
 
-    location /incoming/backend/ {
+    location /incoming/0.1/backend/ {
         deny all;
     }
 }

@@ -5,7 +5,6 @@ Roadmap
 Version 0.1
 -----------
 
-* versioned URLs for all Incoming!! URLs.
 * choose permissive license, "apply" it to everything. double-check that dependencies have compatible licenses.
 
 
@@ -21,6 +20,10 @@ Version 0.2
 
 Any or all of the following (cans that can probably be kicked down the road):
 
+* incoming.set\_server\_hostname should be optional. Possibilities to default to:
+  * hostname page was loaded from (works when everse proxy is set up like in our examples)
+  * template substitution on Incoming!! server when JS file is requested
+  * perhaps use an ID in the script tag, then incoming can get the hostname from the src url?
 * improved logging
 * proper error codes everywhere
 * HTTP API: return values in response bodies are okay, but what do with error messages? More or less fitting HTTP error code and error message in response body is not too nice. Use JSON in responses?

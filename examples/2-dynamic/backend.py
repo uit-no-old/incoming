@@ -33,7 +33,7 @@ def request_upload() :
             "removeFileWhenFinished" : "false", # we do this ourselves, by moving the file
             "backendSecret" : secret,
             }
-    req = requests.post("http://%s/incoming/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
+    req = requests.post("http://%s/incoming/0.1/backend/new_upload" % _config["internal_incoming_host"], params=req_params)
 
     # if status code is OK, the request returns the upload id in the return body. If the status
     # code is an error code, the body contains an error message.
@@ -95,7 +95,7 @@ def move_deferred(upload_id, upload_secret, source_path, dest_path, delay_min_s)
     # now tell the Incoming!! server that we are done
     req_params = { "id" : upload_id,
             "backendSecret" : upload_secret }
-    req = requests.post("http://%s/incoming/backend/finish_upload" % _config["internal_incoming_host"],
+    req = requests.post("http://%s/incoming/0.1/backend/finish_upload" % _config["internal_incoming_host"],
         params = req_params)
 
     # we get either "ok" or an error message as an answer

@@ -28,7 +28,7 @@ Simple backend code in Python (using the tiny [Bottle](http://bottlepy.org/) web
 Request an upload ticket from the Incoming!! server like this (using the [Requests](http://python-requests.org) library):
 
 ```python
-req = requests.post("http://INCOMING_HOSTNAME/incoming/backend/new_upload",
+req = requests.post("http://INCOMING_HOSTNAME/incoming/0.1/backend/new_upload",
                      params = { "signalFinishURL" : "http://APP_HOSTNAME/api/backend/upload_finished" })
 ```
 
@@ -63,7 +63,7 @@ After you return "done", the Incoming!! server notifies your frontend that the u
 Speaking of your frontend, here's what you need to do there. First, you have to load the Incoming!! JavaScript library:
 
 ```html
-<script src="http[s]://INCOMING_HOSTNAME/incoming/frontend/incoming.js"></script>
+<script src="http[s]://INCOMING_HOSTNAME/incoming/0.1/frontend/incoming.js"></script>
 ```
 
 Then, you need some sort of file input, for example a file input field. To that, you can attach an event handler to kick off an upload as soon as the user chooses a file:
