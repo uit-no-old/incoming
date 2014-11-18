@@ -23,11 +23,9 @@ The `incoming` library only exposes two functions.
 
 #### `incoming.set_server_hostname( hostname )`
 
-Sets the hostname where to find the Incoming!! server. This should be set to the same value as INCOMING\_HOSTNAME you used when loading the JavaScript file.
+Sets the hostname where to find the Incoming!! server. You need to call this function if the Incoming!! server name is not the same as your web app's server name. In that case, this should be set to the same value as INCOMING\_HOSTNAME you used when loading the JavaScript file. If this function is not called, Incoming!! will use `window.location.host` as its server.
 
 You need to call this function only once, but it has to be called before any `Uploader` objects are created. We recommend calling it as soon as the page has loaded, for example in `window.onload`. 
-
-It is sad that we need this function at all, but in JavaScript running in a browser, there is no good way to find out which host a JavaScript file has been loaded from.
 
 
 #### `incoming.Uploader( upload_id, file )`

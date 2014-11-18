@@ -120,12 +120,12 @@ window.onload = function() {
     }
 
     // before we do any uploads, we have to tell the incoming!! js library the
-    // host:port of the incoming!! server
+    // host:port of the incoming!! server (defaults to window.location.host)
     incoming.set_server_hostname("{{ public_incoming_host }}");
 };
 ```
 
-We also configure the Incoming!! JavaScript library and tell it where to find the Incoming!! server. This is sadly necessary because in JavaScript code running in a browser, there is currently no way to find out from which host a JavaScript file was loaded. So if the host of the example web app and the host of the Incoming!! server are different (which might very well be, even if you use reverse proxies and load balancers and whathaveyou), the Incoming!! JavaScript library doesn't know where the Incoming!! server is unless we specifically tell it. Therefore this annoying line is necessary.
+We also tell the Incoming!! JavaScript library where to find the Incoming!! server. This is sometimes necessary because in JavaScript code running in a browser, there is currently no way to find out from which host a JavaScript file was loaded. So if the host of the example web app and the host of the Incoming!! server are different (which might very well be, even if you use reverse proxies and load balancers and whathaveyou), the Incoming!! JavaScript library doesn't know where the Incoming!! server is unless we specifically tell it.
 
 Then, the upload function. It is called from further down, when the user selects a file:
 

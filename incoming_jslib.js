@@ -1,7 +1,7 @@
 _incoming_lib = function() {
     var incoming_lib = {};
 
-    var server_hostname = null;
+    var server_hostname = window.location.host;
     incoming_lib.set_server_hostname = function set_server_hostname(hostname) {
         server_hostname = hostname;
     };

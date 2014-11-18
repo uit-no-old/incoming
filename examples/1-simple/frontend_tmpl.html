@@ -14,7 +14,7 @@ window.onload = function() {
     }
 
     // before we do any uploads, we have to tell the incoming!! js library the
-    // host:port of the incoming!! server
+    // host:port of the incoming!! server (defaults to window.location.host)
     incoming.set_server_hostname("{{ public_incoming_host }}");
 };
 
