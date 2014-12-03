@@ -51,6 +51,10 @@ func initStorageDir(storageDir string) error {
 // filesystem, and hands over the path to the uploaded file to the web app. In
 // order to be able to use this uploader, both Incoming!! and the web app need
 // to be able to access the same file system.
+//
+// Note to self: this implements all upload functionality, not only the bits
+// that only apply to *file* uploads. As soon as other storage backends are
+// supported, we need to factor out the 'common' stuff.
 type UploadToLocalFile struct {
 	lock *sync.RWMutex
 
