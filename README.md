@@ -9,7 +9,7 @@ When you want to upload a large file, your web app backend first fetches an uplo
 
 Your web app backend and the Incoming!! server communicate through simple HTTP requests: Incoming!! provides an endpoint for handing out upload tickets, and issues a request to your web app backend when an upload is finished. To its JavaScript library, Incoming!! exposes a WebSocket server. Incoming!! also hosts the JavaScript library file.
 
-The Incoming!! server is implemented in Go, and the JavaScript library in, well, JavaScript, without use of external libraries. The whole thing is free and open source, licensed under the permissive TODO LICENSE.
+The Incoming!! server is implemented in Go, and the JavaScript library in, well, JavaScript, without use of external libraries. The whole thing is free and open source. The server is licensed under the copyleft [AGPLv3](http://choosealicense.com/licenses/agpl-3.0/), and the client library under the permissive [MIT License](http://choosealicense.com/licenses/mit/).
 
 
 Status
@@ -113,7 +113,34 @@ Changelog, roadmap etc.
 * [Roadmap](doc/roadmap.md)
 
 
-License
--------
+Licensing and copyright
+-----------------------
 
-Incoming!! is licensed under the TODO FIND A DAMN LICENSE
+The Incoming!! server is licensed under the [AGPLv3](http://choosealicense.com/licenses/agpl-3.0/), while all the rest, most importantly the JavaScript client library, is licensed under the [MIT License](http://choosealicense.com/licenses/mit/). See individual files for details. If not stated otherwise, a source file is licensed under the MIT License.
+
+The rationale behind using AGPL and MIT License for different parts of Incoming!! is the following: enhancements to Incoming!! itself should always be contributed back to the community, but applications that use Incoming!! need not. We think that the license model we chose reflects this best. A popular project that uses the same approach is [MongoDB](http://www.mongodb.org/).
+
+For clarity: any application you write that just uses Incoming!! does not have to be open-sourced. Your app's backend talks to an Incoming!! server via HTTP (which does not trigger a copyleft condition), and its frontend downloads and uses the Incoming!! JavaScript library, which is licensed under the permissive MIT license (like many other JavaScript libraries). So if you run an unmodified Incoming!! server and use Incoming!! in your web app, you have no obligations other than leaving the JavaScript libraries' copyright header intact. If you improve Incoming!! itself, you are obligated to share only your version of Incoming!!, not any of your apps that use it.
+
+All documentation in the [doc](doc/) directory, including figures, is licensed under the <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>, a permissive license for content that is not code.
+
+All content in the repository, unless stated otherwise, is copyright (c) 2014 Lars Tiede, University of Tromsø - The Arctic University of Norway
+
+
+Acknowledgements
+----------------
+
+Third-party libraries the Incoming!! server uses (none were modified, and none are distributed in this repository):
+
+* [osext](https://bitbucket.org/kardianos/osext/src) is copyright (c) 2012 The Go Authors. [License](ext_licenses/osext.txt) (permissive).
+* The Gorilla web framework's [mux](https://github.com/gorilla/mux) component is Copyright (c) 2012 Rodrigo Moraes. [License](ext_licenses/gorilla.txt) (permissive).
+* [go-yaml](https://github.com/go-yaml/yaml/tree/v1) is Copyright (c) 2011-2014 - Canonical Inc. [License](ext_licenses/go-yaml.txt) (LGPL3 with exception for static linking).
+* [go-uuid](https://code.google.com/p/go-uuid/) is Copyright (c) 2009,2014 Google Inc. [License](ext_licenses/go-uuid.txt) (permissive).
+
+
+Third-party libraries and components used by the examples:
+
+* The [nginx Dockerfile](https://github.com/dockerfile/nginx) we use and distribute as part of our example installation is Copyright (c) Dockerfile Project and licensed under the MIT license.
+* The [Bottle](http://bottlepy.org/docs/dev/index.html#license) web framework is Copyright (c) 2014, Marcel Hellkamp, and licensed under the MIT license.
+* The [Requests](http://docs.python-requests.org/en/latest/user/intro/#apache2) library is Copyright 2014 Kenneth Reitz, and licensed under the [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) license.
+* The [click](http://click.pocoo.org/3/license/) package is Copyright (c) 2014 Armin Ronacher. [License](http://click.pocoo.org/3/license/) (permissive).

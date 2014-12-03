@@ -6,6 +6,8 @@
 # NOTE: we got this directly from github. We save it here only because the
 # build_and_save_container ansible role can't deal with pulling dockerfiles from
 # github yet.
+#
+# Copyright (c) Dockerfile Project
 
 # Pull base image.
 FROM dockerfile/ubuntu
