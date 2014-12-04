@@ -134,6 +134,7 @@ Third-party libraries the Incoming!! server uses (none were modified, and none a
 
 * [osext](https://bitbucket.org/kardianos/osext/src) is copyright (c) 2012 The Go Authors. [License](ext_licenses/osext.txt) (permissive).
 * The Gorilla web framework's [mux](https://github.com/gorilla/mux) component is Copyright (c) 2012 Rodrigo Moraes. [License](ext_licenses/gorilla.txt) (permissive).
+* The Gorilla web framework's [WebSocket](https://github.com/gorilla/websocket) component is Copyright (c) 2013 The Gorilla WebSocket Authors. [License](https://github.com/gorilla/websocket/blob/master/LICENSE) (permissive).
 * [go-yaml](https://github.com/go-yaml/yaml/tree/v1) is Copyright (c) 2011-2014 - Canonical Inc. [License](ext_licenses/go-yaml.txt) (LGPL3 with exception for static linking).
 * [go-uuid](https://code.google.com/p/go-uuid/) is Copyright (c) 2009,2014 Google Inc. [License](ext_licenses/go-uuid.txt) (permissive).
 
