@@ -37,9 +37,9 @@ In order to compile the Incoming!! server, you need [Go](http://www.golang.org).
 
 Now you can get and build Incoming!! like this:
 
-    $ go install github.com/USERNAME/incoming
+    $ go install github.com/uit-no/incoming
 
-When this is done, the repository has been cloned to `$GOPATH/src/github.com/USERNAME/incoming`. cd there. Then build incoming again, just to have the compiled binary in that directory too (it is already in $GOPATH/bin):
+When this is done, the repository has been cloned to `$GOPATH/src/github.com/uit-no/incoming`. cd there. Then build incoming again, just to have the compiled binary in that directory too (it is already in $GOPATH/bin):
 
     $ go build
 
