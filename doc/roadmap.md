@@ -36,3 +36,6 @@ Wishlist (far future?)
 ----------------------
 
 * (optional) file verification after uploads that happened in several sessions: checksum in browser and backend, assert that they are identical. Most likely error scenario: user updated file on his device between upload sessions.
+
+
+Back to [main page](../README.md)

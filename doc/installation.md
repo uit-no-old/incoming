@@ -128,4 +128,4 @@ Both backends are started the same way and accept the same command line paramete
 When both the Incoming!! server and one of the web apps are running, point your browser to the host:port you have the example web app running on and start playing.
 
 
-[Main page](../README.md) | [system overview](overview.md) | continue to [examples](examples.md)
+Back to [main page](../README.md)

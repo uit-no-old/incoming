@@ -374,3 +374,6 @@ The 'move\_deferred' function then runs in an own thread. It moves the file, the
 The Incoming!! server will deem the upload successfully handed over as soon as it gets the request to finish\_upload. It will then also notify the frontend that the upload is finished.
 
 Note that the way example 2 does it is horrible design. You should not start Python threads in Bottle requests unless your app doesn't need to scale. In general, your web app backend should probably try to avoid running any time-consuming code if you want it to scale. We just did it this way here to demonstrate the mechanism.
+
+
+Back to [main page](../README.md)

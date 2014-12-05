@@ -64,3 +64,6 @@ The example web apps container is made using the same process as the Incoming!! 
 Deploying and running the containers then roughly works like this: copy the Docker image tarballs to the target host, load them into the Docker container there, then configure and start the containers.
 
 All the '.rsync-filter-\*' files that are scattered throughout the source repository are filter definitions that are passed in to rsync. '.rsync-filter' are filters that are always applied, '-incoming' are filters that are only applied when the Incoming!! container is built, and '-examples' are filters that are only applied when the example web apps container is built.
+
+
+Back to [main page](../README.md)

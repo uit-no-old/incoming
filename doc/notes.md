@@ -19,3 +19,6 @@ JavaScript File objects don't survive page (re)loads
 Just be aware of this. If you have a file upload form with a file selector and a bunch of metadata, don't submit the metadata in a form that loads another page or reloads the current page.
 
 The recommended way to do this is to submit the metadata form with a JavaScript HTTP request dynamically, without having to leave the currently displayed page in the browser. That way, metadata can also be filled in while the file is already being transferred to Incoming!!.
+
+
+Back to [main page](../README.md)

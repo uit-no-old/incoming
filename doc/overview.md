@@ -90,7 +90,7 @@ In order to use Incoming!!, your app needs to:
 The example web apps we provide along with Incoming!!'s source code implement all of that.
 
 
-Back to [Main Page](README.md) | continue to [Installation](installation.md).
+Back to [main page](../README.md)
 
 [fig-bad]: figures/bad.png
 [fig-components]: figures/components.png
