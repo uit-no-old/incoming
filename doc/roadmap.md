@@ -2,18 +2,12 @@ Roadmap
 =======
 
 
-Version 0.1
------------
-
-* choose permissive license, "apply" it to everything. double-check that dependencies have compatible licenses.
-
-
 Version 0.2
 -----------
 
-* make Incoming!! scalable: support several backends behind a load balancer. For that, we (probably) need:
-  * reference load balancer setup. keep it simple, use a generic one. nginx's load balancing should be perfectly fine.
-  * networked uuid pool (just use redis or something like that?) to map which Incoming!! instance 'has' an upload
+* make Incoming!! scalable: support several backends behind a (redirecting) load balancer. For that, we probably need:
+  * reference load balancer setup. keep it simple, use a generic one. Round-robin redirection in nginx should be perfectly fine as a start.
+  * networked uuid pool (just use redis or something like that?) to map which Incoming!! instance 'has' a certain upload
   * method(s) to 'move' uploader objects between Incoming!! instances
     * "pull": "I have to continue doing this upload. Give me the uploader object"
     * would be nice to be able to 'empty' an instance of all uploads to be able to do zero downtime (rolling) server updates. But where would they go? Should we be able to "push" uploader objects to arbitrary Incoming!! instances, and then later, when the client reconnects, let the instance that was chosen by the (rather dumb) load balancer "pull" the uploader object from wherever it was temporarily stored?
@@ -21,6 +15,7 @@ Version 0.2
 Any or all of the following (cans that can probably be kicked down the road):
 
 * improved logging
+* improved acquisition of app configuration (check TODO note in source)
 * proper error codes everywhere
 * incoming.set\_server\_hostname default could be better. Let Incoming!! backend figure this out an use template substitution in the JS library?
 * HTTP API: return values in response bodies are okay, but what do with error messages? More or less fitting HTTP error code and error message in response body is not too nice. Use JSON in responses?
