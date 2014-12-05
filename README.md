@@ -20,6 +20,17 @@ Incoming!! is in development. Most of it is in place and works. It can already b
 At the present stage of development, Incoming!! can already be deployed together with an individual application, or centrally in your organization. However, for the latter case to be viable, Incoming!! should be able to scale out with several server instances in order to provide ample upload bandwidth. This has always been in the backs of our heads during design and implementation, and is the next major feature we will implement.
 
 
+Quickstart
+----------
+
+If you have [Vagrant](http://www.vagrantup.com) and [Ansible](http://www.ansible.com/home) installed, you can get a complete example installation of Incoming!!, including an example web app, up and running like this:
+
+    $ git clone https://github.com/uit-no/incoming.git
+    $ vagrant up
+
+When the Vagrant VM is ready, point your browser to <http://10.20.1.4> and start playing with Incoming!!.
+
+
 Usage example
 -------------
 

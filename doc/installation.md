@@ -13,7 +13,7 @@ We provide a Vagrantfile so that you can quickly build a complete example setup 
 
 As prerequisites, you need to have Vagrant and Ansible installed. Then, make an empty directory, cd to it, and clone the Incoming!! repository:
 
-    $ git clone TODO paste repo URL here .
+    $ git clone https://github.com/uit-no/incoming.git .
 
 Then, let Vagrant start and Ansible provision a VM with everything for you:
 
