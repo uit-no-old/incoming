@@ -6,7 +6,7 @@ In this package are a few different implementations for this, mainly for shits
 and giggles. I'm learning, okay?
 
 
-Copyright (C) 2014 Lars Tiede, University of Tromsø - The Arctic University of Norway
+Copyright (C) 2014 Lars Tiede, UiT The Arctic University of Norway
 
 
 This program is free software: you can redistribute it and/or modify

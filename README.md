@@ -135,11 +135,13 @@ For clarity: *no application you write that just uses Incoming!! has to be open-
 
 All documentation in the [doc](doc/) directory, including figures, is licensed under the [Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/"), a permissive license for content that is not code.
 
-All content in the repository, unless stated otherwise, is copyright (c) 2014 Lars Tiede, University of Tromsø - The Arctic University of Norway
+All content in the repository, unless stated otherwise, is copyright (c) 2014 Lars Tiede, UiT The Arctic University of Norway
 
 
 Acknowledgements
 ----------------
+
+Incoming!! couldn't exist without many and more open source works that we either built on or used during development. In the following, we credit third-party works that we either include or link to.
 
 Third-party libraries the Incoming!! server uses (none were modified, and none are distributed in this repository):
 

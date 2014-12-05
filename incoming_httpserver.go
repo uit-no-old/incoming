@@ -1,7 +1,7 @@
 /*
 Incoming!! HTTP server
 
-Copyright (C) 2014 Lars Tiede, University of Tromsø - The Arctic University of Norway
+Copyright (C) 2014 Lars Tiede, UiT The Arctic University of Norway
 
 
 This program is free software: you can redistribute it and/or modify
