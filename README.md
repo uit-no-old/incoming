@@ -152,9 +152,13 @@ Third-party libraries the Incoming!! server uses (none were modified, and none a
 * [go-uuid](https://code.google.com/p/go-uuid/) is Copyright (c) 2009,2014 Google Inc. [License](ext_licenses/go-uuid.txt) (permissive).
 
 
-Third-party libraries and components used by the examples:
+Third-party libraries and components used by the example web apps:
 
-* The [nginx Dockerfile](https://github.com/dockerfile/nginx) we use and distribute as part of our example installation is Copyright (c) Dockerfile Project and licensed under the MIT license.
 * The [Bottle](http://bottlepy.org/docs/dev/index.html#license) web framework is Copyright (c) 2014, Marcel Hellkamp, and licensed under the MIT license.
 * The [Requests](http://docs.python-requests.org/en/latest/user/intro/#apache2) library is Copyright 2014 Kenneth Reitz, and licensed under the [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) license.
 * The [click](http://click.pocoo.org/3/license/) package is Copyright (c) 2014 Armin Ronacher. [License](http://click.pocoo.org/3/license/) (permissive).
+
+Third-party components used by the example Docker and Vagrant setups:
+
+* The [nginx Dockerfile](https://github.com/dockerfile/nginx) we use and distribute (unchanged) is Copyright (c) Dockerfile Project, and licensed under the MIT license.
+* [https://github.com/phusion/open-vagrant-boxes](https://github.com/phusion/open-vagrant-boxes) (Docker-friendly base boxes for Vagrant) and [https://github.com/phusion/baseimage-docker](https://github.com/phusion/baseimage-docker) (Ubuntu base image modified for Docker-friendliness) are both Copyright (c) 2013-2014 Phusion, and licensed under the MIT license.
