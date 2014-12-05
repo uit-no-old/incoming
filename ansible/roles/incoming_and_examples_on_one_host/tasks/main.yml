@@ -21,12 +21,18 @@
     #incoming_ip: "{{ docker_containers|selectattr('Name', 'equalto', '/incoming')|first.NetworkSettings.IPAddress }}" # this should work but doesn't because my Ansible version doesn't know the 'equalto' Jinja2 test yet :(
     incoming_internal_ip: "{{ docker_containers[0].NetworkSettings.IPAddress }}"
 
+- name: figure out fqdn to use (browsers must be able to find them)
+  set_fact:
+      fqdn: "{% if host_fqdn == '' %}{{ ansible_fqdn }}{% else %}{{ host_fqdn }}{% endif %}"
+
+- debug: var=fqdn
+
 - name: have web app example container running
   remote_user: root
   docker: image="lars.tiede/incoming_examples" name="incoming_examples" state="running"
       volumes_from="incoming"
       {% if incoming_examples_port_maps is defined %} ports={{ incoming_examples_port_maps }} {% endif %}
-      env='PUBLIC_HOSTNAME={{ ansible_fqdn }},PUBLIC_INCOMING_HOSTNAME={{ ansible_fqdn }},INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000'
+      env='PUBLIC_HOSTNAME={{ fqdn }},PUBLIC_INCOMING_HOSTNAME={{ fqdn }},INTERNAL_INCOMING_HOSTNAME={{ incoming_internal_ip }}:4000'
       tty=yes
       #' this just for buggy vim syntax highlight
   register: container_webapp
@@ -52,7 +58,7 @@
   template: src=sites-enabled/00_http_upgrade_magic dest=/root/docker_webserver_config/sites-enabled/00_http_upgrade_magic
 
 - name: do we have an SSL cert for the target host?
-  local_action: stat path="ssl-certs/{{ ansible_fqdn }}-nginx.pem"
+  local_action: stat path="ssl-certs/{{ fqdn }}-nginx.pem"
   sudo: false
   register: stat_ssl_cert
 
@@ -65,8 +71,8 @@
   remote_user: root
   copy: src=ssl-certs/{{ item }} dest=/root/docker_webserver_config/certs/{{ item }}
   with_items:
-      - "{{ ansible_fqdn }}-nginx.pem"
-      - "{{ ansible_fqdn }}.key"
+      - "{{ fqdn }}-nginx.pem"
+      - "{{ fqdn }}.key"
   when: stat_ssl_cert.stat.exists
 
 - name: have nginx server config for example app

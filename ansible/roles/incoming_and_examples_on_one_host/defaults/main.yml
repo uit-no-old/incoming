@@ -1,0 +1,5 @@
+---
+nginx_server_port: 80
+nginx_ssl_server_port: 443
+example_port: 4001
+host_fqdn: ''

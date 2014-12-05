@@ -36,6 +36,10 @@
         image_file_name: 'incoming_example_webserver'
       - role: has_private_keys
       - role: incoming_and_examples_on_one_host
+        host_fqdn: ''
+        # pass in a non-empty value if you want to explicitly set the fqdn.
+        # Otherwise, ansible_fqdn will be used. (Best set this as a host
+        # variable)
         nginx_server_port: 80
         nginx_ssl_server_port: 443
         example_port: 4002

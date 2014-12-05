@@ -12,3 +12,4 @@ py-env/*
 examples/py-env/*
 temp_uploads/*
 ansible/docker_images/*
+.vagrant

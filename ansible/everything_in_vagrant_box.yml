@@ -1,0 +1,26 @@
+---
+# this playbook provisions a Vagrant box with everything.
+
+# first, we set up the Vagrant box for root ssh access and have docker in it
+- hosts: all
+  remote_user: vagrant
+  tasks:
+      - name: have user's public SSH key in root's authorized_keys
+        sudo: yes
+        authorized_key: user=root key='{{ lookup('file', item) }}' #' just for vim bug
+        with_fileglob:
+            - "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+      - name: have docker apt repository key
+        sudo: yes
+        apt_key: keyserver=keyserver.ubuntu.com
+            id=36A1D7869245C8950F966E92D8576A8BA88D21E9
+      - name: have docker apt repository in apt sources list
+        sudo: yes
+        apt_repository: repo='deb https://get.docker.com/ubuntu docker main'
+      - name: have docker installed
+        sudo: yes
+        apt: name=lxc-docker
+
+
+# then, just run the other playbook.
+- include: build_and_run_incoming_and_examples.yml

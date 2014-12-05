@@ -1,13 +1,13 @@
 # {{ ansible_managed }}
 
 server {
-    server_name {{ ansible_fqdn }};
+    server_name {{ fqdn }};
     listen 80;
 
     {% if stat_ssl_cert.stat.exists %}
     listen 443 ssl;
-    ssl_certificate     certs/{{ ansible_fqdn }}-nginx.pem;
-    ssl_certificate_key certs/{{ ansible_fqdn }}.key;
+    ssl_certificate     certs/{{ fqdn }}-nginx.pem;
+    ssl_certificate_key certs/{{ fqdn }}.key;
 
     ssl_session_timeout  5m;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
