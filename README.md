@@ -133,7 +133,7 @@ The rationale behind using AGPL and MIT License for different parts of Incoming!
 
 For clarity: *no application you write that just uses Incoming!! has to be open-sourced.* Your app's backend talks to an Incoming!! server via HTTP (which does not trigger a copyleft condition), and its frontend downloads and uses the Incoming!! JavaScript library, which is licensed under the permissive MIT license (like many other JavaScript libraries). So if you run an unmodified Incoming!! server and use Incoming!! in your web app, you have no obligations other than leaving the JavaScript libraries' copyright header intact. If you improve Incoming!! itself, you are obligated to share only your version of Incoming!!, not any of your apps that use it.
 
-All documentation in the [doc](doc/) directory, including figures, is licensed under the <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>, a permissive license for content that is not code.
+All documentation in the [doc](doc/) directory, including figures, is licensed under the [Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/"), a permissive license for content that is not code.
 
 All content in the repository, unless stated otherwise, is copyright (c) 2014 Lars Tiede, University of Tromsø - The Arctic University of Norway
 
