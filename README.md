@@ -28,7 +28,7 @@ If you have [Vagrant](http://www.vagrantup.com) and [Ansible](http://www.ansible
     $ git clone https://github.com/uit-no/incoming.git
     $ vagrant up
 
-When the Vagrant VM is ready, point your browser to <http://10.20.1.4> and start playing with Incoming!!.
+When the Vagrant VM is ready, point your browser (which must run on the same machine that hosts the Vagrant VM) to <http://10.20.1.4> and start playing with Incoming!!.
 
 
 Usage example
@@ -131,7 +131,7 @@ The Incoming!! server is licensed under the [AGPLv3](http://choosealicense.com/l
 
 The rationale behind using AGPL and MIT License for different parts of Incoming!! is the following: enhancements to Incoming!! itself should always be contributed back to the community, but applications that use Incoming!! need not. We think that the license model we chose reflects this best. A popular project that uses the same approach is [MongoDB](http://www.mongodb.org/).
 
-For clarity: any application you write that just uses Incoming!! does not have to be open-sourced. Your app's backend talks to an Incoming!! server via HTTP (which does not trigger a copyleft condition), and its frontend downloads and uses the Incoming!! JavaScript library, which is licensed under the permissive MIT license (like many other JavaScript libraries). So if you run an unmodified Incoming!! server and use Incoming!! in your web app, you have no obligations other than leaving the JavaScript libraries' copyright header intact. If you improve Incoming!! itself, you are obligated to share only your version of Incoming!!, not any of your apps that use it.
+For clarity: *no application you write that just uses Incoming!! has to be open-sourced.* Your app's backend talks to an Incoming!! server via HTTP (which does not trigger a copyleft condition), and its frontend downloads and uses the Incoming!! JavaScript library, which is licensed under the permissive MIT license (like many other JavaScript libraries). So if you run an unmodified Incoming!! server and use Incoming!! in your web app, you have no obligations other than leaving the JavaScript libraries' copyright header intact. If you improve Incoming!! itself, you are obligated to share only your version of Incoming!!, not any of your apps that use it.
 
 All documentation in the [doc](doc/) directory, including figures, is licensed under the <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>, a permissive license for content that is not code.
 
