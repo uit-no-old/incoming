@@ -23,7 +23,7 @@ import (
 	"log"
 	"sync"
 
-	"source.uit.no/star-apt/incoming/uidpool"
+	"github.com/uit-no/incoming/uidpool"
 )
 
 type UploaderPool interface {

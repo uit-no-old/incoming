@@ -28,7 +28,7 @@ import (
 	"reflect"
 	"time"
 
-	"source.uit.no/star-apt/incoming/upload"
+	"github.com/uit-no/incoming/upload"
 
 	"github.com/gorilla/websocket"
 )

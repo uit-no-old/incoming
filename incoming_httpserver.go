@@ -32,7 +32,7 @@ import (
 	"bitbucket.org/kardianos/osext"
 	"github.com/gorilla/mux"
 
-	"source.uit.no/star-apt/incoming/upload"
+	"github.com/uit-no/incoming/upload"
 )
 
 type appVarsT struct {
