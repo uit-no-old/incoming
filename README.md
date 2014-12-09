@@ -23,7 +23,7 @@ At the present stage of development, Incoming!! can already be deployed together
 Quickstart
 ----------
 
-If you have [Vagrant](http://www.vagrantup.com) and [Ansible](http://www.ansible.com/home) installed, you can get a complete example installation of Incoming!!, including an example web app, up and running like this:
+If you have [Vagrant](http://www.vagrantup.com) (1.5 or newer) and [Ansible](http://www.ansible.com/home) installed, you can get a complete example installation of Incoming!!, including an example web app, up and running like this:
 
     $ git clone https://github.com/uit-no/incoming.git
     $ vagrant up

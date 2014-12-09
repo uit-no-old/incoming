@@ -1,6 +1,4 @@
 - /doc
 - /examples
 - /example_webserver
-- /README.md
 - /rsync_push
-- /.gitignore
