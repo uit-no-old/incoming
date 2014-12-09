@@ -4,7 +4,7 @@
   roles:
       - role: build_and_save_container
         dockerfile_dir: '../'
-        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-incoming",--filter="- .rsync-filter-incoming"'
+        extra_rsync_opts: '--filter="dir-merge /.rsync-filter-workaround",--filter="- .rsync-filter-workaround",--filter="dir-merge /.rsync-filter-incoming",--filter="- .rsync-filter-incoming"'
         image_file_name: 'incoming'
         image_name: 'lars.tiede/incoming'
         image_tag: 'latest'
