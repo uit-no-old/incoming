@@ -1,16 +1,16 @@
-FROM phusion/baseimage:0.9.15
+FROM phusion/baseimage:0.9.16
 MAINTAINER Lars Tiede <lars.tiede@uit.no>
 
 # update base ubuntu
 # NOTE this is discouraged by docker: https://docs.docker.com/reference/builder/#run
 #   But we do it anyway...
-RUN apt-get update; apt-get -y upgrade; apt-get -y dist-upgrade
+RUN apt-get update && apt-get -y upgrade && apt-get -y dist-upgrade
 
 
 ## some baseimage related things
 
-# make new ssh host keys
-RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
+# enable SSH and make new ssh host keys
+RUN rm -f /etc/service/sshd/down && /etc/my_init.d/00_regen_ssh_host_keys.sh
 
 # use baseimage's init system
 CMD ["/sbin/my_init"]
@@ -32,7 +32,7 @@ ADD . /tmp/incoming_project/
 ENV GOPATH /go
 RUN cd /tmp/incoming_project/ansible && ansible-playbook -i localhost, -c local inside-docker.yml
 
-# contact points to the outside world: directory with uploads (to file), HTTP port
+# contact points to the outside world: directory with uploads (to file), HTTP port, SSH port
 VOLUME /var/incoming
 EXPOSE 4000 22
 
