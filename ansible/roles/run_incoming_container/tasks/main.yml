@@ -1,0 +1,31 @@
+---
+- name: kill and remove Incoming!! container if necessary
+  docker: 
+      name: "{{ incoming_container_name }}"
+      image: "{{ incoming_image_name }}"
+      state: absent
+  when: incoming_remove_if_exists
+
+- name: have Incoming!! container running
+  docker:
+      name: "{{ incoming_container_name }}"
+      image: "{{ incoming_image_name }}"
+      state: reloaded
+      ports: "{% if incoming_port_forward != false %}{{ incoming_port_forward }}:4000{% endif %}"
+      tty: yes
+      volumes: "{% if incoming_uploads_volume_path != false %}{{ incoming_uploads_volume_path }}:/var/incoming{% endif %}"
+
+- name: inspect Incoming!! container
+  shell: docker inspect {{ incoming_container_name }}
+  register: result
+  changed_when: false
+- set_fact:
+    incoming_container_details: "{{ result.stdout|from_json }}"
+
+- set_fact:
+    incoming_container_facts:
+        internal_ip: "{{ incoming_container_details[0].NetworkSettings.IPAddress }}"
+        container_name: "{{ incoming_container_details[0].Name[1:] }}"
+        docker_inspect: "{{ incoming_container_details[0] }}"
+
+#- debug: var=incoming_container_facts
