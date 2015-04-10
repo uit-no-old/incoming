@@ -11,9 +11,13 @@
       name: "{{ incoming_container_name }}"
       image: "{{ incoming_image_name }}"
       state: reloaded
-      ports: "{% if incoming_port_forward != false %}{{ incoming_port_forward }}:4000{% endif %}"
+      ports: >
+          [ {% if incoming_port_forward != false %}"{{ incoming_port_forward }}:4000"{% endif %}
+          ]
       tty: yes
-      volumes: "{% if incoming_uploads_volume_path != false %}{{ incoming_uploads_volume_path }}:/var/incoming{% endif %}"
+      volumes: >
+          [ {% if incoming_uploads_volume_path != false %}"{{ incoming_uploads_volume_path }}:/var/incoming"{% endif %}
+          ]
 
 - name: inspect Incoming!! container
   shell: docker inspect {{ incoming_container_name }}
