@@ -147,10 +147,11 @@ Your web app backend must expose one HTTP function to the Incoming!! server: the
 
 Accessed by the Incoming!! server when an upload has arrived and can be handed over. Answer this request either with 'wait' or 'done'. When the answer is 'wait', your web app backend must POST to Incoming!!'s /incoming/0.1/backend/finish\_upload later in order to signal to Incoming!! that the upload is finished. When the answer is "done", Incoming!! considers the upload finished as soon as it gets that response.
 
-Parameters:
+Parameters (passed as form values):
 
 * `id` - upload ticket id of the upload.
 * `backendSecret` - shared secret string for this upload (defaults to '' if there was no shared secret for this upload).
+* `filename` - path to the uploaded file (as Incoming!! sees it).
 
 Return value (passed as response body): 'wait' or 'done'.
 
