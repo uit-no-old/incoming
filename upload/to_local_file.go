@@ -26,7 +26,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -76,6 +78,7 @@ type UploadToLocalFile struct {
 	signalFinishURL        *url.URL
 	backendSecret          string
 	removeFileWhenFinished bool
+	fileOwnerUid           int
 	chHandoverWait         chan error
 	chHandoverDone         chan struct{}
 
@@ -92,7 +95,8 @@ type UploadToLocalFile struct {
 // NewUploadToLocalFile makes a local file uploader.
 func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	signalFinishURL *url.URL, removeFileWhenFinished bool,
-	backendSecret string, idleTimeout time.Duration) Uploader {
+	fileOwnerUid int, backendSecret string,
+	idleTimeout time.Duration) Uploader {
 
 	u := new(UploadToLocalFile)
 	u.lock = new(sync.RWMutex)
@@ -101,6 +105,7 @@ func NewUploadToLocalFile(pool UploaderPool, storageDir string,
 	u.signalFinishURL = signalFinishURL
 	u.backendSecret = backendSecret
 	u.removeFileWhenFinished = removeFileWhenFinished
+	u.fileOwnerUid = fileOwnerUid
 	u.boundToSocketHandler = false
 	u.dir = storageDir
 	u.chHandoverWait = make(chan error)
@@ -411,6 +416,14 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 	go func() {
 		htclient := new(http.Client)
 		htclient.Timeout = reqTimeout
+
+		// chown the file if app backend is going to move/delete it
+		if !u.removeFileWhenFinished {
+			me, _ := user.Current()
+			myGid, _ := strconv.ParseInt(me.Gid, 10, 64)
+			os.Chmod(u.path, 0770)
+			os.Chown(u.path, u.fileOwnerUid, int(myGid))
+		}
 
 		// signal app backend that we are done
 		v := url.Values{}

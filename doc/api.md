@@ -112,6 +112,7 @@ Acquire an upload ticket. Parameters (passed as form values):
 * `signalFinishURL` - URL the Incoming!! server should POST to when the file has arrived. For details on that function you have to provide check the 'Your web app backend HTTP API' section below.
 * `destType` (optional, defaults to 'file') - destination type. 'file' or some other sort of storage object. At present, only 'file' is supported, but we will probably add support for storage systems such as Ceph in the future.
 * `removeFileWhenFinished` (optional, defaults to 'true') - should the Incoming!! server, when all is done, remove the uploaded file or not? If your web app backend moves the file to another location during handover, you should set this to 'false'.
+* `fileOwnerUid` (optional, defaults to '') - if `removeFileWhenFinished` is False, set this value to the UID of the user who should own the file after upload. If you don't set this, the file will be owned by the user that runs Incoming!!. In that case, you might not be able to delete the file (unless your app runs as the same user as Incoming!! or as root).
 * `backendSecret` (optional, defaults to '') - an arbitrary string that will henceforth be used as the backend secret for this upload.
 
 Return value (passed as response body): upload ticket id - a UUID string.

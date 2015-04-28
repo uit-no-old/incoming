@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -77,6 +78,19 @@ func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// the file we will write, which user id should own it?
+	fileOwnerUidStr := r.FormValue("fileOwnerUid")
+	if fileOwnerUidStr == "" { // Default: our own UID
+		me, _ := user.Current()
+		fileOwnerUidStr = me.Uid
+	}
+	fileOwnerUid, err := strconv.ParseInt(fileOwnerUidStr, 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "fileOwnerUid invalid: %s", err.Error())
+		return
+	}
+
 	// secret cookie to POST to finish URL later
 	backendSecret := r.FormValue("backendSecret") // optional, "" if not given
 
@@ -84,7 +98,7 @@ func NewUploadHandler(w http.ResponseWriter, r *http.Request) {
 	storageDirAbsolute, _ := filepath.Abs(appVars.config.StorageDir)
 	uploader := upload.NewUploadToLocalFile(appVars.uploaders,
 		storageDirAbsolute, signalFinishURL,
-		removeFileWhenFinished, backendSecret,
+		removeFileWhenFinished, int(fileOwnerUid), backendSecret,
 		time.Duration(appVars.config.UploadMaxIdleDurationS)*time.Second)
 
 	// answer request with id of new uploader
