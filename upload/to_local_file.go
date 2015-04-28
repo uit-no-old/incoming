@@ -441,13 +441,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		u.resetTimeout(u.idleTimeout)
 		u.lock.Unlock()
 
-		// set error if http went through but we got a bad http status back
-		if err == nil && resp.StatusCode != 200 {
-			//log.Printf("Got bad http status on handover: %s", resp.Status)
-			err = fmt.Errorf("Got bad http status on handover: %s", resp.Status)
-		}
-
-		// read (first 4 bytes of) response body if we can
+		// read response body if we can
 		respBody := []byte(nil)
 		if err == nil {
 			if resp.ContentLength > -1 {
@@ -456,6 +450,14 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 				resp.Body.Close()
 			}
 		}
+
+		// set error if http went through but we got a bad http status back
+		if err == nil && resp.StatusCode != 200 {
+			//log.Printf("Got bad http status on handover: %s", resp.Status)
+			err = fmt.Errorf("Got bad http status on handover: %s %s",
+				resp.Status, respBody)
+		}
+
 		var respStr string
 		if err == nil {
 			respStr = string(respBody[0:4])
