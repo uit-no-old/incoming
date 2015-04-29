@@ -45,6 +45,13 @@ func initStorageDir(storageDir string) error {
 	if err != nil {
 		return err
 	}
+	// need 777 for apps that remove files themselves. NOTE this is something
+	// we definitely want to get rid of when Incoming!! serves many
+	// applications.
+	err = os.Chmod(storageDir, 0777)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
