@@ -22,6 +22,7 @@ package upload
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -449,27 +450,20 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 		u.lock.Unlock()
 
 		// read response body if we can
-		respBody := []byte(nil)
+		respStr := ""
 		if err == nil {
-			if resp.ContentLength > -1 {
-				respBody = make([]byte, resp.ContentLength)
-				resp.Body.Read(respBody)
-				resp.Body.Close()
-			}
+			log.Printf("Got handover response of %d bytes", resp.ContentLength)
+			respBody, _ := ioutil.ReadAll(resp.Body)
+			respStr = string(respBody)
+			log.Printf("Content of response: %s", respStr)
 		}
 
 		// set error if http went through but we got a bad http status back
 		if err == nil && resp.StatusCode != 200 {
 			//log.Printf("Got bad http status on handover: %s", resp.Status)
 			err = fmt.Errorf("Got bad http status on handover: %s %s",
-				resp.Status, respBody)
+				resp.Status, respStr)
 		}
-
-		var respStr string
-		if err == nil {
-			respStr = string(respBody[0:4])
-		}
-		//log.Printf("Got response from app backend: %s", respStr)
 
 		// response is "done"? yay, we'll be done. response is "wait"? we'll wait...
 		wait := false
@@ -479,7 +473,7 @@ func (u *UploadToLocalFile) HandFileToApp(reqTimeout time.Duration,
 			} else if respStr == "done" {
 				wait = false
 			} else {
-				err = errors.New("don't understand reply from app backend")
+				err = fmt.Errorf("don't understand reply from app backend: %s", respStr)
 			}
 		}
 
@@ -608,9 +602,7 @@ func (u *UploadToLocalFile) Cancel(tellAppBackend bool, reason string,
 		// we don't care what's in the body of the response, but we read it
 		// anyway so that the remote site won't suffer a broken pipe
 		if resp.Body != nil {
-			respBody := make([]byte, resp.ContentLength)
-			resp.Body.Read(respBody)
-			resp.Body.Close()
+			_, _ = ioutil.ReadAll(resp.Body)
 		}
 	}
 
